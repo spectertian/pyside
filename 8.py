@@ -53,23 +53,35 @@ class ScreenshotTool(QMainWindow):
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
-
         self.layout = QVBoxLayout(self.central_widget)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+
+        # Top area: buttons with blue background
+        top_widget = QWidget()
+        top_widget.setStyleSheet("background-color: #4287f5;")
+        top_layout = QVBoxLayout(top_widget)
 
         # Top row: capture and delete all buttons
-        top_row = QHBoxLayout()
+        button_row = QHBoxLayout()
         self.capture_button = QPushButton("Capture Screenshot")
         self.capture_button.clicked.connect(self.start_capture)
-        self.capture_button.setStyleSheet("background-color: #4287f5; color: white; padding: 10px;")
+        self.capture_button.setStyleSheet("background-color: white; color: #4287f5; padding: 10px;")
 
         self.delete_all_button = QPushButton("Delete All Screenshots")
         self.delete_all_button.clicked.connect(self.delete_all_screenshots)
-        self.delete_all_button.setStyleSheet("background-color: #4287f5; color: white; padding: 10px;")
+        self.delete_all_button.setStyleSheet("background-color: white; color: #4287f5; padding: 10px;")
 
-        top_row.addWidget(self.capture_button)
-        top_row.addWidget(self.delete_all_button)
+        button_row.addWidget(self.capture_button)
+        button_row.addWidget(self.delete_all_button)
+        top_layout.addLayout(button_row)
 
-        self.layout.addLayout(top_row)
+        self.layout.addWidget(top_widget)
+
+        # Bottom area: content with pink background
+        bottom_widget = QWidget()
+        bottom_widget.setStyleSheet("background-color: #FFC0CB;")
+        bottom_layout = QVBoxLayout(bottom_widget)
 
         # Main content area
         content_layout = QHBoxLayout()
@@ -77,7 +89,6 @@ class ScreenshotTool(QMainWindow):
         # Left side: list and buttons
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-
         self.screenshot_list = QListWidget()
         self.screenshot_list.setIconSize(QSize(100, 100))
         self.screenshot_list.setResizeMode(QListWidget.Adjust)
@@ -86,6 +97,7 @@ class ScreenshotTool(QMainWindow):
 
         self.refresh_button = QPushButton("Refresh List")
         self.refresh_button.clicked.connect(self.load_saved_screenshots)
+        self.refresh_button.setStyleSheet("background-color: white; color: #4287f5; padding: 5px;")
 
         left_layout.addWidget(self.screenshot_list)
         left_layout.addWidget(self.refresh_button)
@@ -97,7 +109,8 @@ class ScreenshotTool(QMainWindow):
         content_layout.addWidget(left_widget, 1)
         content_layout.addWidget(self.image_label, 2)
 
-        self.layout.addLayout(content_layout)
+        bottom_layout.addLayout(content_layout)
+        self.layout.addWidget(bottom_widget)
 
         self.load_saved_screenshots()
 
