@@ -59,28 +59,40 @@ class ScreenshotTool(QMainWindow):
 
         # Top area: buttons with blue background
         top_widget = QWidget()
-        top_widget.setStyleSheet("background-color: #4287f5;")
-        top_layout = QVBoxLayout(top_widget)
+        top_widget.setStyleSheet("""
+                    background-color: #4287f5;
+                    border-bottom: 2px solid #3268c7;
+                """)
+        top_layout = QHBoxLayout(top_widget)
+        top_layout.setContentsMargins(10, 10, 10, 10)
+        top_layout.setSpacing(10)
 
-        # Top row: capture and delete all buttons
-        button_row = QHBoxLayout()
-        self.capture_button = QPushButton("Capture Screenshot")
+        # Create tab-like buttons
+        self.capture_button = self.create_tab_button("Capture Screenshot", "camera.png")
         self.capture_button.clicked.connect(self.start_capture)
-        self.capture_button.setStyleSheet("background-color: white; color: #4287f5; padding: 10px;")
 
-        self.delete_all_button = QPushButton("Delete All Screenshots")
+        # Add title label
+        self.title_label = QLabel("截图版板")
+        self.title_label.setStyleSheet("""
+                    color: white;
+                    font-size: 18px;
+                    font-weight: bold;
+                """)
+
+        self.delete_all_button = self.create_tab_button("Delete All Screenshots", "trash.png")
         self.delete_all_button.clicked.connect(self.delete_all_screenshots)
-        self.delete_all_button.setStyleSheet("background-color: white; color: #4287f5; padding: 10px;")
 
-        button_row.addWidget(self.capture_button)
-        button_row.addWidget(self.delete_all_button)
-        top_layout.addLayout(button_row)
+        top_layout.addWidget(self.capture_button)
+        top_layout.addStretch()
+        top_layout.addWidget(self.title_label)
+        top_layout.addStretch()
+        top_layout.addWidget(self.delete_all_button)
 
         self.layout.addWidget(top_widget)
 
-        # Bottom area: content with pink background
+        # Bottom area: content with light background
         bottom_widget = QWidget()
-        bottom_widget.setStyleSheet("background-color: #FFC0CB;")
+        bottom_widget.setStyleSheet("background-color: #f0f0f0;")
         bottom_layout = QVBoxLayout(bottom_widget)
 
         # Main content area
@@ -94,10 +106,34 @@ class ScreenshotTool(QMainWindow):
         self.screenshot_list.setResizeMode(QListWidget.Adjust)
         self.screenshot_list.setSpacing(10)
         self.screenshot_list.itemDoubleClicked.connect(self.show_full_screenshot)
+        self.screenshot_list.setStyleSheet("""
+            QListWidget {
+                background-color: white;
+                border: 1px solid #dcdcdc;
+                border-radius: 5px;
+            }
+            QListWidget::item {
+                padding: 5px;
+            }
+            QListWidget::item:hover {
+                background-color: #e6e6e6;
+            }
+        """)
 
         self.refresh_button = QPushButton("Refresh List")
         self.refresh_button.clicked.connect(self.load_saved_screenshots)
-        self.refresh_button.setStyleSheet("background-color: white; color: #4287f5; padding: 5px;")
+        self.refresh_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4287f5;
+                color: white;
+                padding: 8px 15px;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #3268c7;
+            }
+        """)
 
         left_layout.addWidget(self.screenshot_list)
         left_layout.addWidget(self.refresh_button)
@@ -105,6 +141,13 @@ class ScreenshotTool(QMainWindow):
         # Right side: image preview
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setStyleSheet("""
+            QLabel {
+                background-color: white;
+                border: 1px solid #dcdcdc;
+                border-radius: 5px;
+            }
+        """)
 
         content_layout.addWidget(left_widget, 1)
         content_layout.addWidget(self.image_label, 2)
@@ -114,6 +157,27 @@ class ScreenshotTool(QMainWindow):
 
         self.load_saved_screenshots()
 
+    def create_tab_button(self, text, icon_path):
+        button = QPushButton(text)
+        button.setIcon(QIcon(icon_path))
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #3268c7;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                text-align: left;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2758b3;
+            }
+            QPushButton:pressed {
+                background-color: #1e4c9a;
+            }
+        """)
+        return button
     def start_capture(self):
         self.hide()
         self.screen_capture = ScreenCapture()
@@ -147,7 +211,7 @@ class ScreenshotTool(QMainWindow):
             file_path = os.path.join("screenshots", filename)
             pixmap = QPixmap(file_path)
             item_widget = ScreenshotItem(pixmap, filename)
-            item_widget.delete_button.clicked.connect(lambda checked, fp=file_path: self.delete_screenshot(fp))
+            item_widget.delete_button.clicked.connect(lambda checked=False, fp=file_path: self.delete_screenshot(fp))
 
             item = QListWidgetItem(self.screenshot_list)
             item.setSizeHint(item_widget.sizeHint())
