@@ -61,25 +61,43 @@ class ScreenshotTool(QMainWindow):
         top_widget = QWidget()
         top_widget.setStyleSheet("""
                     background-color: #4287f5;
-                    border-bottom: 2px solid #3268c7;
                 """)
         top_layout = QHBoxLayout(top_widget)
         top_layout.setContentsMargins(10, 10, 10, 10)
-        top_layout.setSpacing(10)
+        top_layout.setSpacing(20)
 
-        # Create tab-like buttons
-        self.capture_button = self.create_tab_button("Capture Screenshot", "camera.png")
+        # Create buttons with new style
+        button_style = """
+                    QPushButton {
+                        background-color: transparent;
+                        color: black;
+                        border: none;
+                        padding: 5px 10px;
+                        font-size: 14px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(255, 255, 255, 0.2);
+                    }
+                    QPushButton:pressed {
+                        background-color: rgba(255, 255, 255, 0.3);
+                    }
+                """
+
+        self.capture_button = QPushButton("Capture Screenshot")
+        self.capture_button.setStyleSheet(button_style)
         self.capture_button.clicked.connect(self.start_capture)
 
         # Add title label
-        self.title_label = QLabel("截图版板")
+        self.title_label = QLabel("截图版")
         self.title_label.setStyleSheet("""
                     color: white;
                     font-size: 18px;
                     font-weight: bold;
                 """)
 
-        self.delete_all_button = self.create_tab_button("Delete All Screenshots", "trash.png")
+        self.delete_all_button = QPushButton("Delete All Screenshots")
+        self.delete_all_button.setStyleSheet(button_style)
         self.delete_all_button.clicked.connect(self.delete_all_screenshots)
 
         top_layout.addWidget(self.capture_button)
@@ -90,9 +108,9 @@ class ScreenshotTool(QMainWindow):
 
         self.layout.addWidget(top_widget)
 
-        # Bottom area: content with light background
+        # Bottom area: content with pink background
         bottom_widget = QWidget()
-        bottom_widget.setStyleSheet("background-color: #f0f0f0;")
+        bottom_widget.setStyleSheet("background-color: #FFC0CB;")
         bottom_layout = QVBoxLayout(bottom_widget)
 
         # Main content area
