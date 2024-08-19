@@ -84,19 +84,19 @@ class ScreenshotTool(QMainWindow):
                     }
                 """
 
-        self.capture_button = QPushButton("Capture Screenshot")
+        self.capture_button = QPushButton("截图")
         self.capture_button.setStyleSheet(button_style)
         self.capture_button.clicked.connect(self.start_capture)
 
         # Add title label
-        self.title_label = QLabel("截图版")
+        self.title_label = QLabel("截图板")
         self.title_label.setStyleSheet("""
                     color: white;
                     font-size: 18px;
                     font-weight: bold;
                 """)
 
-        self.delete_all_button = QPushButton("Delete All Screenshots")
+        self.delete_all_button = QPushButton("全部清空")
         self.delete_all_button.setStyleSheet(button_style)
         self.delete_all_button.clicked.connect(self.delete_all_screenshots)
 
