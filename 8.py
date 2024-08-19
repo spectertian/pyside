@@ -49,7 +49,7 @@ class ScreenshotTool(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Screenshot Tool")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 600, 500)  # 调整窗口大小
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -113,64 +113,27 @@ class ScreenshotTool(QMainWindow):
         bottom_widget.setStyleSheet("background-color: #FFC0CB;")
         bottom_layout = QVBoxLayout(bottom_widget)
 
-        # Main content area
-        content_layout = QHBoxLayout()
-
-        # Left side: list and buttons
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
+        # Screenshot list
         self.screenshot_list = QListWidget()
         self.screenshot_list.setIconSize(QSize(100, 100))
         self.screenshot_list.setResizeMode(QListWidget.Adjust)
         self.screenshot_list.setSpacing(10)
         self.screenshot_list.itemDoubleClicked.connect(self.show_full_screenshot)
-        self.screenshot_list.setStyleSheet("""
-            QListWidget {
-                background-color: white;
-                border: 1px solid #dcdcdc;
-                border-radius: 5px;
-            }
-            QListWidget::item {
-                padding: 5px;
-            }
-            QListWidget::item:hover {
-                background-color: #e6e6e6;
-            }
-        """)
 
+        # Refresh button
         self.refresh_button = QPushButton("Refresh List")
         self.refresh_button.clicked.connect(self.load_saved_screenshots)
         self.refresh_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4287f5;
-                color: white;
-                padding: 8px 15px;
-                border: none;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #3268c7;
-            }
-        """)
+                    background-color: white;
+                    color: #4287f5;
+                    padding: 5px;
+                    border: none;
+                    border-radius: 3px;
+                """)
 
-        left_layout.addWidget(self.screenshot_list)
-        left_layout.addWidget(self.refresh_button)
+        bottom_layout.addWidget(self.screenshot_list)
+        bottom_layout.addWidget(self.refresh_button)
 
-        # Right side: image preview
-        self.image_label = QLabel()
-        self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setStyleSheet("""
-            QLabel {
-                background-color: white;
-                border: 1px solid #dcdcdc;
-                border-radius: 5px;
-            }
-        """)
-
-        content_layout.addWidget(left_widget, 1)
-        content_layout.addWidget(self.image_label, 2)
-
-        bottom_layout.addLayout(content_layout)
         self.layout.addWidget(bottom_widget)
 
         self.load_saved_screenshots()
