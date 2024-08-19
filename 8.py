@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
 from PySide6.QtGui import QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication
 from PySide6.QtCore import Qt, QRect, QPoint, Signal, QSize
 from PySide6.QtWidgets import QStyle
+from PySide6.QtWidgets import QToolTip
+
 
 
 from PySide6.QtWidgets import QRubberBand
@@ -359,6 +361,8 @@ class SelectionDialog(QDialog):
 
     def get_selection(self):
         return self.rubberband.geometry()
+
+
 class ImagePreviewDialog(QDialog):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
@@ -367,14 +371,14 @@ class ImagePreviewDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        layout.addWidget(scroll_area)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        layout.addWidget(self.scroll_area)
 
-        content = QWidget()
-        scroll_area.setWidget(content)
+        self.content = QWidget()
+        self.scroll_area.setWidget(self.content)
 
-        content_layout = QVBoxLayout(content)
+        content_layout = QVBoxLayout(self.content)
 
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
@@ -392,6 +396,13 @@ class ImagePreviewDialog(QDialog):
         scaled_size = self.original_pixmap.size() * self.scale_factor
         self.resize(scaled_size)
 
+        # 添加鼠标跟踪
+        self.content.setMouseTracking(True)
+        self.content.mouseMoveEvent = self.on_mouse_move
+
+        # 定义提示区域
+        self.tooltip_rect = QRect()
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.updateImageSize()
@@ -402,12 +413,28 @@ class ImagePreviewDialog(QDialog):
             scaled_pixmap = self.original_pixmap.scaled(scaled_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.image_label.setPixmap(scaled_pixmap)
 
+            # 更新提示区域
+            rect_size = 50  # 提示区域的大小
+            self.tooltip_rect = QRect(
+                scaled_pixmap.width() - rect_size,
+                scaled_pixmap.height() - rect_size,
+                rect_size,
+                rect_size
+            )
+
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
             self.scale_factor *= 1.1  # 放大
         else:
             self.scale_factor *= 0.9  # 缩小
         self.updateImageSize()
+
+    def on_mouse_move(self, event):
+        pos = event.pos() - self.image_label.pos()
+        if self.tooltip_rect.contains(pos):
+            QToolTip.showText(event.globalPos(), "美女")
+        else:
+            QToolTip.hideText()
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     tool = ScreenshotTool()
