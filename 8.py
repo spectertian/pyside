@@ -363,7 +363,7 @@ class ImagePreviewDialog(QDialog):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Image Preview")
-        self.setGeometry(100, 100, 800, 600)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMaximizeButtonHint | Qt.WindowMinimizeButtonHint)
 
         layout = QVBoxLayout(self)
 
@@ -376,15 +376,38 @@ class ImagePreviewDialog(QDialog):
 
         content_layout = QVBoxLayout(content)
 
-        label = QLabel()
-        pixmap = QPixmap(image_path)
-        label.setPixmap(pixmap)
-        label.setAlignment(Qt.AlignCenter)
-        content_layout.addWidget(label)
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignCenter)
+        content_layout.addWidget(self.image_label)
+
+        self.original_pixmap = QPixmap(image_path)
+        self.scale_factor = 0.75  # 设置初始缩放比例为 75%
+        self.updateImageSize()
 
         button_box = QDialogButtonBox(QDialogButtonBox.Close)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
+
+        # 设置初始窗口大小为图片的 75%
+        scaled_size = self.original_pixmap.size() * self.scale_factor
+        self.resize(scaled_size)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.updateImageSize()
+
+    def updateImageSize(self):
+        if self.original_pixmap:
+            scaled_size = self.original_pixmap.size() * self.scale_factor
+            scaled_pixmap = self.original_pixmap.scaled(scaled_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.image_label.setPixmap(scaled_pixmap)
+
+    def wheelEvent(self, event):
+        if event.angleDelta().y() > 0:
+            self.scale_factor *= 1.1  # 放大
+        else:
+            self.scale_factor *= 0.9  # 缩小
+        self.updateImageSize()
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     tool = ScreenshotTool()
