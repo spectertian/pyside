@@ -363,10 +363,13 @@ class SelectionDialog(QDialog):
         return self.rubberband.geometry()
 
 
-from PySide6.QtWidgets import QWidget, QToolTip
-from PySide6.QtGui import QPainter, QColor, QIcon
-from PySide6.QtCore import Qt, QRect, QSize, QPoint, QTimer
+import os
 import time
+import threading
+from PySide6.QtWidgets import QWidget, QToolTip
+from PySide6.QtGui import QPainter, QColor, QIcon, QPixmap
+from PySide6.QtCore import (Qt, QRect, QSize, QPoint, QTimer,
+                            QPropertyAnimation, QEasingCurve, Property, Signal, Slot)
 
 
 def get_tooltip_text():
@@ -376,6 +379,9 @@ def get_tooltip_text():
 
 
 class OverlayWidget(QWidget):
+    tooltip_ready = Signal(str)
+    loading_finished = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WA_NoSystemBackground)
@@ -387,10 +393,28 @@ class OverlayWidget(QWidget):
         self.icon_size = QSize(30, 30)
         self.icon_rect = QRect()
 
+        # 加载动画
+        loader_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "loading.gif"))
+        self.loader_pixmap = QPixmap(loader_path)
+        self.loader_rect = QRect()
+        self._rotation = 0
+        self.animation = QPropertyAnimation(self, b"rotation")
+        self.animation.setDuration(1000)
+        self.animation.setStartValue(0)
+        self.animation.setEndValue(360)
+        self.animation.setLoopCount(-1)  # 无限循环
+        self.animation.setEasingCurve(QEasingCurve.Linear)
+
         self.tooltip_text = ""
         self.tooltip_timer = QTimer(self)
         self.tooltip_timer.setSingleShot(True)
-        self.tooltip_timer.timeout.connect(self.show_tooltip)
+        self.tooltip_timer.timeout.connect(self.fetch_tooltip)
+
+        self.is_loading = False
+
+        # 连接信号到槽
+        self.tooltip_ready.connect(self.show_tooltip)
+        self.loading_finished.connect(self.on_loading_finished)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -409,26 +433,63 @@ class OverlayWidget(QWidget):
         painter.setPen(Qt.NoPen)
         painter.drawEllipse(self.icon_rect)
 
-        # 绘制图标
-        self.icon.paint(painter, self.icon_rect)
+        if self.is_loading:
+            # 绘制加载动画
+            painter.save()
+            painter.translate(self.icon_rect.center())
+            painter.rotate(self._rotation)
+            painter.translate(-self.icon_rect.center())
+            painter.drawPixmap(self.icon_rect, self.loader_pixmap)
+            painter.restore()
+        else:
+            # 绘制图标
+            self.icon.paint(painter, self.icon_rect)
 
     def mouseMoveEvent(self, event):
         if self.icon_rect.contains(event.position().toPoint()):
-            if not self.tooltip_timer.isActive():
-                self.tooltip_timer.start(1000)  # 1秒后触发
+            if not self.tooltip_timer.isActive() and not self.is_loading:
+                self.tooltip_timer.start(100)  # 100ms后开始加载
         else:
             self.tooltip_timer.stop()
             QToolTip.hideText()
 
-    def show_tooltip(self):
-        if not self.tooltip_text:
-            self.tooltip_text = get_tooltip_text()
+    def fetch_tooltip(self):
+        self.is_loading = True
+        self.animation.start()
+        self.update()
+
+        def fetch():
+            tooltip_text = get_tooltip_text()
+            self.tooltip_ready.emit(tooltip_text)
+            self.loading_finished.emit()
+
+        threading.Thread(target=fetch, daemon=True).start()
+
+    @Slot(str)
+    def show_tooltip(self, text):
+        self.tooltip_text = text
         cursor_pos = self.mapToGlobal(self.mapFromGlobal(self.cursor().pos()))
         QToolTip.showText(cursor_pos, self.tooltip_text)
+
+    @Slot()
+    def on_loading_finished(self):
+        self.is_loading = False
+        self.animation.stop()
+        self.update()
 
     def leaveEvent(self, event):
         self.tooltip_timer.stop()
         QToolTip.hideText()
+
+    def get_rotation(self):
+        return self._rotation
+
+    def set_rotation(self, rotation):
+        if self._rotation != rotation:
+            self._rotation = rotation
+            self.update()
+
+    rotation = Property(int, get_rotation, set_rotation)
 
 
 class ImagePreviewDialog(QDialog):
