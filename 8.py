@@ -444,12 +444,22 @@ class OverlayWidget(QWidget):
         self.icon.paint(painter, self.icon_rect)
 
         if self.is_loading:
-            # 绘制加载动画
+            # 绘制加载动画，使用透明背景
             painter.save()
             painter.translate(self.loader_rect.center())
             painter.rotate(self._rotation)
             painter.translate(-self.loader_rect.center())
-            painter.drawPixmap(self.loader_rect, self.loader_pixmap)
+
+            # 创建一个带有透明背景的图像
+            image = QImage(self.loader_pixmap.toImage())
+            image = image.convertToFormat(QImage.Format_ARGB32)
+            for x in range(image.width()):
+                for y in range(image.height()):
+                    color = QColor(image.pixel(x, y))
+                    if color.red() > 200 and color.green() > 200 and color.blue() > 200:
+                        image.setPixelColor(x, y, QColor(0, 0, 0, 0))
+
+            painter.drawImage(self.loader_rect, image)
             painter.restore()
 
     def mouseMoveEvent(self, event):
