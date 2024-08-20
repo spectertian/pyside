@@ -433,6 +433,37 @@ class ImagePreviewDialog(QDialog):
             self.scale_factor *= 0.9  # 缩小
         self.updateImageSize()
 
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self.image_label.pixmap():
+            painter = QPainter(self)
+            pixmap_rect = self.image_label.contentsRect()
+            pixmap = self.image_label.pixmap()
+            pixmap_rect = QRect(
+                pixmap_rect.x() + (pixmap_rect.width() - pixmap.width()) // 2,
+                pixmap_rect.y() + (pixmap_rect.height() - pixmap.height()) // 2,
+                pixmap.width(),
+                pixmap.height()
+            )
+
+            # 调整图标位置到右下角五分之二处
+            icon_size = 30  # 图标大小
+            tooltip_rect = QRect(
+                pixmap_rect.right() - pixmap_rect.width() * 2 // 5 - icon_size // 2,
+                pixmap_rect.bottom() - pixmap_rect.height() * 2 // 5 - icon_size // 2,
+                icon_size,
+                icon_size
+            )
+
+            # 绘制半透明背景
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(0, 0, 0, 50))  # 半透明黑色
+            painter.drawRect(tooltip_rect)
+
+            # 绘制图标
+            self.icon.paint(painter, tooltip_rect)
+
+
     def on_mouse_move(self, event):
         pos = event.position().toPoint()
         pixmap_rect = self.image_label.contentsRect()
@@ -443,6 +474,15 @@ class ImagePreviewDialog(QDialog):
                 pixmap_rect.y() + (pixmap_rect.height() - pixmap.height()) // 2,
                 pixmap.width(),
                 pixmap.height()
+            )
+
+            # 调整提示区域位置到右下角五分之二处
+            icon_size = 30
+            self.tooltip_rect = QRect(
+                pixmap_rect.right() - pixmap_rect.width() * 2 // 5 - icon_size // 2,
+                pixmap_rect.bottom() - pixmap_rect.height() * 2 // 5 - icon_size // 2,
+                icon_size,
+                icon_size
             )
 
         if pixmap_rect.contains(pos):
@@ -463,41 +503,6 @@ class ImagePreviewDialog(QDialog):
         size = self.geometry()
         self.move((screen.width() - size.width()) // 2,
                   (screen.height() - size.height()) // 2)
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        if self.image_label.pixmap():
-            painter = QPainter(self)
-            pixmap_rect = self.image_label.contentsRect()
-            pixmap = self.image_label.pixmap()
-            pixmap_rect = QRect(
-                pixmap_rect.x() + (pixmap_rect.width() - pixmap.width()) // 2,
-                pixmap_rect.y() + (pixmap_rect.height() - pixmap.height()) // 2,
-                pixmap.width(),
-                pixmap.height()
-            )
-            tooltip_rect = QRect(
-                pixmap_rect.right() - self.tooltip_rect.width(),
-                pixmap_rect.bottom() - self.tooltip_rect.height(),
-                self.tooltip_rect.width(),
-                self.tooltip_rect.height()
-            )
-
-            # 绘制半透明背景
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(0, 0, 0, 50))  # 半透明黑色
-            painter.drawRect(tooltip_rect)
-
-            # 绘制图标
-            icon_size = min(tooltip_rect.width(), tooltip_rect.height()) - 10  # 留一些边距
-            icon_rect = QRect(
-                tooltip_rect.x() + (tooltip_rect.width() - icon_size) // 2,
-                tooltip_rect.y() + (tooltip_rect.height() - icon_size) // 2,
-                icon_size,
-                icon_size
-            )
-            self.icon.paint(painter, icon_rect)
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
