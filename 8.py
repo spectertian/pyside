@@ -392,9 +392,10 @@ class ImagePreviewDialog(QDialog):
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 
-        # 设置初始窗口大小为图片的 75%
+        # 设置初始窗口大小为图片的 75%，并确保在屏幕内
         scaled_size = self.original_pixmap.size() * self.scale_factor
         self.resize(scaled_size)
+        self.centerOnScreen()
 
         # 添加鼠标跟踪
         self.content.setMouseTracking(True)
@@ -402,6 +403,17 @@ class ImagePreviewDialog(QDialog):
 
         # 定义提示区域
         self.tooltip_rect = QRect()
+
+    def centerOnScreen(self):
+        # 获取主屏幕
+        screen = QApplication.primaryScreen().geometry()
+
+        # 计算窗口应该位于的位置
+        x = (screen.width() - self.width()) // 2
+        y = (screen.height() - self.height()) // 2
+
+        # 移动窗口到计算出的位置
+        self.move(x, y)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
