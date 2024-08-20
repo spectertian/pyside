@@ -387,9 +387,9 @@ class OverlayWidget(QWidget):
         width = self.width()
         height = self.height()
 
-        # 计算图标位置
-        icon_x = int(width * 0.8 - self.icon_size.width() / 2)
-        icon_y = int(height * 0.8 - self.icon_size.height() / 2)
+        # 计算图标位置 (右下角七分之三处)
+        icon_x = int(width * (1 - 3 / 7) - self.icon_size.width() / 2)
+        icon_y = int(height * (1 - 3 / 7) - self.icon_size.height() / 2)
         self.icon_rect = QRect(icon_x, icon_y, self.icon_size.width(), self.icon_size.height())
 
         # 绘制半透明白色背景
