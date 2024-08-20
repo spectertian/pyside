@@ -1,18 +1,14 @@
 import sys
 import os
+import time
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
                                QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
                                QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
-                               QScrollArea, QMessageBox, QGridLayout)
-from PySide6.QtGui import QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication
-from PySide6.QtCore import Qt, QRect, QPoint, Signal, QSize
-from PySide6.QtWidgets import QStyle
-from PySide6.QtWidgets import QToolTip
-
-
-
-from PySide6.QtWidgets import QRubberBand
-from PySide6.QtGui import QImage, QPainter
+                               QScrollArea, QMessageBox, QGridLayout, QToolTip)
+from PySide6.QtGui import (QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication,
+                           QImage, QTransform)
+from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
+                            QEasingCurve, Property, QEvent, QThread, QTimer)
 
 class ScreenshotItem(QWidget):
     def __init__(self, pixmap, filename, parent=None):
@@ -363,200 +359,133 @@ class SelectionDialog(QDialog):
         return self.rubberband.geometry()
 
 
-import os
-import time
-import threading
-from PySide6.QtWidgets import QWidget, QToolTip
-from PySide6.QtGui import QPainter, QColor, QIcon, QPixmap
-from PySide6.QtCore import (Qt, QRect, QSize, QPoint, QTimer,
-                            QPropertyAnimation, QEasingCurve, Property, Signal, Slot)
 
-
-def get_tooltip_text():
-    # 这里模拟从接口获取数据，实际使用时替换为真实的API调用
-    time.sleep(1)  # 等待1秒
-    return "这是从接口获取的提示文本"
-
-
-class OverlayWidget(QWidget):
-    tooltip_ready = Signal(str)
-    loading_finished = Signal()
-
+class RotatingLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setAttribute(Qt.WA_NoSystemBackground)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setMouseTracking(True)
-
-        icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "info_icon.png"))
-        self.icon = QIcon(icon_path)
-        self.icon_size = QSize(30, 30)
-        self.icon_rect = QRect()
-
-        # 加载动画
-        loader_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "loading.gif"))
-        self.loader_pixmap = QPixmap(loader_path)
-        self.loader_size = QSize(30, 30)
-        self.loader_rect = QRect()
         self._rotation = 0
-        self.animation = QPropertyAnimation(self, b"rotation")
-        self.animation.setDuration(1000)
-        self.animation.setStartValue(0)
-        self.animation.setEndValue(360)
-        self.animation.setLoopCount(-1)  # 无限循环
-        self.animation.setEasingCurve(QEasingCurve.Linear)
+        self._pixmap = QPixmap("icons/loading.gif")  # 替换为你的加载图标路径
 
-        self.tooltip_text = ""
-        self.tooltip_timer = QTimer(self)
-        self.tooltip_timer.setSingleShot(True)
-        self.tooltip_timer.timeout.connect(self.fetch_tooltip)
+    def setRotation(self, rotation):
+        self._rotation = rotation
+        self.update()
 
-        self.is_loading = False
+    def rotation(self):
+        return self._rotation
 
-        # 连接信号到槽
-        self.tooltip_ready.connect(self.show_tooltip)
-        self.loading_finished.connect(self.on_loading_finished)
+    rotation = Property(float, rotation, setRotation)
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.translate(self.width() / 2, self.height() / 2)
+        painter.rotate(self._rotation)
+        painter.translate(-self.width() / 2, -self.height() / 2)
+        painter.drawPixmap(0, 0, self._pixmap)
 
-        width = self.width()
-        height = self.height()
-        padding = 10  # 添加一些内边距
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPushButton, QWidget,
+                               QHBoxLayout, QToolTip, QProgressBar)
+from PySide6.QtGui import QPixmap, QIcon, QPainter, QColor,QEventPoint
+from PySide6.QtCore import Qt, QPoint, QSize, Signal, QTimer, QThread, Signal
+import time
 
-        # 计算 info_icon 位置 (右下角)
-        icon_x = width - self.icon_size.width() - padding
-        icon_y = height - self.icon_size.height() - padding
-        self.icon_rect = QRect(icon_x, icon_y, self.icon_size.width(), self.icon_size.height())
+class ImageInfoThread(QThread):
+    info_received = Signal(str)
 
-        # 计算 loader 位置 (左上角)
-        loader_x = padding
-        loader_y = padding
-        self.loader_rect = QRect(loader_x, loader_y, self.loader_size.width(), self.loader_size.height())
+    def __init__(self, image_path):
+        super().__init__()
+        self.image_path = image_path
 
-        # 绘制 info_icon 的半透明白色背景
-        painter.setBrush(QColor(255, 255, 255, 200))
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(self.icon_rect)
-
-        # 绘制 info_icon
-        self.icon.paint(painter, self.icon_rect)
-
-        if self.is_loading:
-            # 绘制加载动画，使用透明背景
-            painter.save()
-            painter.translate(self.loader_rect.center())
-            painter.rotate(self._rotation)
-            painter.translate(-self.loader_rect.center())
-
-            # 创建一个带有透明背景的图像
-            image = QImage(self.loader_pixmap.toImage())
-            image = image.convertToFormat(QImage.Format_ARGB32)
-            for x in range(image.width()):
-                for y in range(image.height()):
-                    color = QColor(image.pixel(x, y))
-                    if color.red() > 200 and color.green() > 200 and color.blue() > 200:
-                        image.setPixelColor(x, y, QColor(0, 0, 0, 0))
-
-            painter.drawImage(self.loader_rect, image)
-            painter.restore()
-
-    def mouseMoveEvent(self, event):
-        if self.icon_rect.contains(event.position().toPoint()):
-            if not self.tooltip_timer.isActive() and not self.is_loading:
-                self.tooltip_timer.start(100)  # 100ms后开始加载
-        else:
-            self.tooltip_timer.stop()
-            QToolTip.hideText()
-
-    def fetch_tooltip(self):
-        self.is_loading = True
-        self.animation.start()
-        self.update()
-
-        def fetch():
-            tooltip_text = get_tooltip_text()
-            self.tooltip_ready.emit(tooltip_text)
-            self.loading_finished.emit()
-
-        threading.Thread(target=fetch, daemon=True).start()
-
-    @Slot(str)
-    def show_tooltip(self, text):
-        self.tooltip_text = text
-        cursor_pos = self.mapToGlobal(self.mapFromGlobal(self.cursor().pos()))
-        QToolTip.showText(cursor_pos, self.tooltip_text)
-
-    @Slot()
-    def on_loading_finished(self):
-        self.is_loading = False
-        self.animation.stop()
-        self.update()
-
-    def leaveEvent(self, event):
-        self.tooltip_timer.stop()
-        QToolTip.hideText()
-
-    def get_rotation(self):
-        return self._rotation
-
-    def set_rotation(self, rotation):
-        if self._rotation != rotation:
-            self._rotation = rotation
-            self.update()
-
-    rotation = Property(int, get_rotation, set_rotation)
-
+    def run(self):
+        # 模拟异步获取图片信息的过程
+        time.sleep(2)  # 模拟网络延迟
+        # 这里应该是实际的API调用，获取图片信息
+        info = f"图片路径: {self.image_path}\n大小: 1024x768\n格式: PNG\n创建时间: {time.ctime()}"
+        self.info_received.emit(info)
 
 class ImagePreviewDialog(QDialog):
     def __init__(self, image_path, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setWindowTitle("Image Preview")
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMaximizeButtonHint | Qt.WindowMinimizeButtonHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.image_path = image_path
 
+        # 主布局
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 图片区域
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        main_layout.addWidget(self.scroll_area)
+        # 图片容器
+        self.image_container = QWidget(self)
+        self.image_container.setStyleSheet("background-color: white; border-radius: 10px;")
+        image_layout = QVBoxLayout(self.image_container)
+        image_layout.setContentsMargins(10, 10, 10, 10)
 
-        self.content = QWidget()
-        self.scroll_area.setWidget(self.content)
-
-        content_layout = QVBoxLayout(self.content)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-
+        # 图片标签
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
-        content_layout.addWidget(self.image_label)
+        image_layout.addWidget(self.image_label)
+        main_layout.addWidget(self.image_container)
 
+        # 设置图片
         self.original_pixmap = QPixmap(image_path)
         self.scale_factor = 0.75
         self.updateImageSize()
 
-        # 添加覆盖层
-        self.overlay = OverlayWidget(self.image_label)
-        self.overlay.resize(self.image_label.size())
-        self.overlay.lower()
+        # 添加 OverlayWidget
+        self.overlay = OverlayWidget(self.image_container)
+        self.overlay.setGeometry(self.image_container.rect())
 
-        button_box = QDialogButtonBox(QDialogButtonBox.Close)
-        button_box.rejected.connect(self.reject)
-        main_layout.addWidget(button_box)
+        # 添加关闭按钮
+        self.close_button = QPushButton(self)
+        self.close_button.setIcon(QIcon("icons/close_icon.png"))  # 替换为实际的关闭图标路径
+        self.close_button.setStyleSheet("""
+                    QPushButton {
+                        background-color: #FF5555;
+                        border: none;
+                        border-radius: 15px;
+                    }
+                    QPushButton:hover {
+                        background-color: #FF0000;
+                    }
+                """)
+        self.close_button.setFixedSize(30, 30)
+        self.close_button.clicked.connect(self.close)
 
-        scaled_size = self.original_pixmap.size() * self.scale_factor
-        self.resize(scaled_size)
+        # 添加旋转的加载图标
+        self.loading_icon = RotatingLabel(self)
+        self.loading_icon.setFixedSize(40, 40)
+        self.loading_icon.hide()
 
+        # 创建旋转动画
+        self.rotation_animation = QPropertyAnimation(self.loading_icon, b"rotation")
+        self.rotation_animation.setDuration(1000)
+        self.rotation_animation.setStartValue(0)
+        self.rotation_animation.setEndValue(360)
+        self.rotation_animation.setLoopCount(-1)  # 无限循环
+
+        # 设置窗口大小和位置
+        self.updateDialogSize()
         self.centerOnScreen()
 
-        # 添加覆盖层
-        self.overlay = OverlayWidget(self.image_label)
-        self.overlay.setGeometry(self.image_label.rect())
-        self.overlay.raise_()  # 确保覆盖层在最上层
-        self.overlay.show()
+        # 启动加载过程
+        self.startLoading()
+
+    def startLoading(self):
+        self.loading_icon.show()
+        self.loading_icon.move(10, 10)  # 放在左上角
+        self.rotation_animation.start()
+
+        # 创建并启动线程
+        self.info_thread = ImageInfoThread(self.image_path)
+        self.info_thread.info_received.connect(self.onInfoReceived)
+        self.info_thread.start()
+
+    def onInfoReceived(self, info):
+        self.loading_icon.hide()
+        self.rotation_animation.stop()
+        # 更新 OverlayWidget 中的信息
+        self.overlay.setInfo(info)
 
     def updateImageSize(self):
         scaled_pixmap = self.original_pixmap.scaled(
@@ -565,19 +494,77 @@ class ImagePreviewDialog(QDialog):
             Qt.SmoothTransformation
         )
         self.image_label.setPixmap(scaled_pixmap)
-        if hasattr(self, 'overlay'):
-            self.overlay.resize(self.image_label.size())
+
+    def updateDialogSize(self):
+        image_size = self.image_label.pixmap().size()
+        dialog_size = QSize(image_size.width() + 20, image_size.height() + 20)  # 20是边距
+        self.setFixedSize(dialog_size.width() + 40, dialog_size.height() + 20)  # 为按钮预留空间
+        self.image_container.setFixedSize(dialog_size)
+        self.overlay.setGeometry(self.image_container.geometry())
+        self.close_button.move(self.width() - 40, 10)
 
     def centerOnScreen(self):
         screen = self.screen().availableGeometry()
         self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
 
-
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if hasattr(self, 'overlay'):
-            self.overlay.setGeometry(self.image_label.rect())
+        self.overlay.setGeometry(self.image_container.rect())
+        self.close_button.move(self.width() - 40, 10)
+        self.overlay.updateInfoButtonPosition()
 
+class OverlayWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+        self.setMouseTracking(True)
+
+        self.info_button = QPushButton(self)
+        self.info_button.setIcon(QIcon("icons/info_icon.png"))  # 替换为实际的信息图标路径
+        self.info_button.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255, 255, 255, 150);
+                border: none;
+                border-radius: 15px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 200);
+            }
+        """)
+        self.info_button.setFixedSize(30, 30)
+        self.info_button.setCursor(Qt.PointingHandCursor)
+        self.info_button.installEventFilter(self)
+
+        self.info = "加载中..."
+
+    def setInfo(self, info):
+        self.info = info
+
+    def eventFilter(self, obj, event):
+        if obj == self.info_button:
+            if event.type() == QEvent.Enter:
+                self.showTooltip()
+                return True
+            elif event.type() == QEvent.Leave:
+                self.hideTooltip()
+                return True
+        return super().eventFilter(obj, event)
+
+    def showTooltip(self):
+        QToolTip.showText(self.info_button.mapToGlobal(QPoint(0, self.info_button.height())),
+                          self.info, self.info_button)
+
+    def hideTooltip(self):
+        QToolTip.hideText()
+
+    def updateInfoButtonPosition(self):
+        x = int(self.width() * 0.9)  # 90% 从左边
+        y = int(self.height() * 0.1)  # 10% 从上边
+        self.info_button.move(x - self.info_button.width(), y)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(0, 0, 0, 1))  # 几乎完全透明的背景
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     tool = ScreenshotTool()
