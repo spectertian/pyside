@@ -4,7 +4,7 @@ import time
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
                                QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
                                QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
-                               QScrollArea, QMessageBox, QGridLayout, QToolTip)
+                               QScrollArea, QMessageBox, QGridLayout, QToolTip,QStyle)
 from PySide6.QtGui import (QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication,
                            QImage, QTransform)
 from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
@@ -364,7 +364,25 @@ class RotatingLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._rotation = 0
-        self._pixmap = QPixmap("icons/loading.gif")  # 替换为你的加载图标路径
+        self._original_pixmap = QPixmap("icons/loading.gif")  # 替换为你的加载图标路径
+        self._pixmap = self.makeTransparent(self._original_pixmap)
+        self.setFixedSize(40, 40)  # 设置固定大小
+        self.setAttribute(Qt.WA_TranslucentBackground)  # 允许透明背景
+
+    def makeTransparent(self, pixmap):
+        # 将pixmap转换为QImage
+        image = pixmap.toImage()
+
+        # 遍历所有像素
+        for x in range(image.width()):
+            for y in range(image.height()):
+                color = QColor(image.pixelColor(x, y))
+                # 如果像素是白色或接近白色，将其设置为透明
+                if color.red() > 250 and color.green() > 250 and color.blue() > 250:
+                    image.setPixelColor(x, y, QColor(0, 0, 0, 0))
+
+        # 将处理后的QImage转回QPixmap
+        return QPixmap.fromImage(image)
 
     def setRotation(self, rotation):
         self._rotation = rotation
@@ -377,10 +395,16 @@ class RotatingLabel(QLabel):
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
+
+        # 清除背景
+        painter.eraseRect(self.rect())
+
+        # 绘制旋转的图标
         painter.translate(self.width() / 2, self.height() / 2)
         painter.rotate(self._rotation)
-        painter.translate(-self.width() / 2, -self.height() / 2)
+        painter.translate(-self._pixmap.width() / 2, -self._pixmap.height() / 2)
         painter.drawPixmap(0, 0, self._pixmap)
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPushButton, QWidget,
