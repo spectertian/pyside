@@ -362,7 +362,6 @@ class SelectionDialog(QDialog):
     def get_selection(self):
         return self.rubberband.geometry()
 
-
 class ImagePreviewDialog(QDialog):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
@@ -392,28 +391,21 @@ class ImagePreviewDialog(QDialog):
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 
-        # 设置初始窗口大小为图片的 75%，并确保在屏幕内
+        # 设置初始窗口大小为图片的 75%
         scaled_size = self.original_pixmap.size() * self.scale_factor
         self.resize(scaled_size)
-        self.centerOnScreen()
 
         # 添加鼠标跟踪
-        self.content.setMouseTracking(True)
-        self.content.mouseMoveEvent = self.on_mouse_move
+        self.image_label.setMouseTracking(True)
+        self.image_label.mouseMoveEvent = self.on_mouse_move
 
         # 定义提示区域
         self.tooltip_rect = QRect()
 
-    def centerOnScreen(self):
-        # 获取主屏幕
-        screen = QApplication.primaryScreen().geometry()
+        # 加载图标
+        self.icon = QIcon("icons/info_icon.png")  # 替换为你的图标路径
 
-        # 计算窗口应该位于的位置
-        x = (screen.width() - self.width()) // 2
-        y = (screen.height() - self.height()) // 2
-
-        # 移动窗口到计算出的位置
-        self.move(x, y)
+        self.centerOnScreen()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -442,11 +434,71 @@ class ImagePreviewDialog(QDialog):
         self.updateImageSize()
 
     def on_mouse_move(self, event):
-        pos = event.pos() - self.image_label.pos()
-        if self.tooltip_rect.contains(pos):
-            QToolTip.showText(event.globalPos(), "美女")
+        pos = event.position().toPoint()
+        pixmap_rect = self.image_label.contentsRect()
+        pixmap = self.image_label.pixmap()
+        if pixmap:
+            pixmap_rect = QRect(
+                pixmap_rect.x() + (pixmap_rect.width() - pixmap.width()) // 2,
+                pixmap_rect.y() + (pixmap_rect.height() - pixmap.height()) // 2,
+                pixmap.width(),
+                pixmap.height()
+            )
+
+        if pixmap_rect.contains(pos):
+            img_pos = QPoint(
+                pos.x() - pixmap_rect.x(),
+                pos.y() - pixmap_rect.y()
+            )
+
+            if self.tooltip_rect.contains(img_pos):
+                QToolTip.showText(self.mapToGlobal(pos), "这是自定义文字")
+            else:
+                QToolTip.hideText()
         else:
             QToolTip.hideText()
+
+    def centerOnScreen(self):
+        screen = QApplication.primaryScreen().availableGeometry()
+        size = self.geometry()
+        self.move((screen.width() - size.width()) // 2,
+                  (screen.height() - size.height()) // 2)
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self.image_label.pixmap():
+            painter = QPainter(self)
+            pixmap_rect = self.image_label.contentsRect()
+            pixmap = self.image_label.pixmap()
+            pixmap_rect = QRect(
+                pixmap_rect.x() + (pixmap_rect.width() - pixmap.width()) // 2,
+                pixmap_rect.y() + (pixmap_rect.height() - pixmap.height()) // 2,
+                pixmap.width(),
+                pixmap.height()
+            )
+            tooltip_rect = QRect(
+                pixmap_rect.right() - self.tooltip_rect.width(),
+                pixmap_rect.bottom() - self.tooltip_rect.height(),
+                self.tooltip_rect.width(),
+                self.tooltip_rect.height()
+            )
+
+            # 绘制半透明背景
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(0, 0, 0, 50))  # 半透明黑色
+            painter.drawRect(tooltip_rect)
+
+            # 绘制图标
+            icon_size = min(tooltip_rect.width(), tooltip_rect.height()) - 10  # 留一些边距
+            icon_rect = QRect(
+                tooltip_rect.x() + (tooltip_rect.width() - icon_size) // 2,
+                tooltip_rect.y() + (tooltip_rect.height() - icon_size) // 2,
+                icon_size,
+                icon_size
+            )
+            self.icon.paint(painter, icon_rect)
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     tool = ScreenshotTool()
