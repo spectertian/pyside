@@ -359,53 +359,49 @@ class SelectionDialog(QDialog):
         return self.rubberband.geometry()
 
 
-
+from PySide6.QtWidgets import QLabel
+from PySide6.QtGui import QMovie
+from PySide6.QtCore import Qt, QSize
 class RotatingLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._rotation = 0
-        self._original_pixmap = QPixmap("icons/loading.gif")  # 替换为你的加载图标路径
-        self._pixmap = self.makeTransparent(self._original_pixmap)
         self.setFixedSize(40, 40)  # 设置固定大小
         self.setAttribute(Qt.WA_TranslucentBackground)  # 允许透明背景
 
-    def makeTransparent(self, pixmap):
-        # 将pixmap转换为QImage
-        image = pixmap.toImage()
+        # 创建 QMovie 对象
+        self.movie = QMovie("icons/loading.gif")
+        self.movie.setScaledSize(QSize(40, 40))  # 设置 GIF 大小
+        self.setMovie(self.movie)
+        self.movie.start()
 
-        # 遍历所有像素
-        for x in range(image.width()):
-            for y in range(image.height()):
-                color = QColor(image.pixelColor(x, y))
-                # 如果像素是白色或接近白色，将其设置为透明
-                if color.red() > 250 and color.green() > 250 and color.blue() > 250:
-                    image.setPixelColor(x, y, QColor(0, 0, 0, 0))
+    def startAnimation(self):
+        self.movie.start()
 
-        # 将处理后的QImage转回QPixmap
-        return QPixmap.fromImage(image)
+    def stopAnimation(self):
+        self.movie.stop()
 
-    def setRotation(self, rotation):
-        self._rotation = rotation
-        self.update()
+    # def setRotation(self, rotation):
+    #     self._rotation = rotation
+    #     self.update()
+    #
+    # def rotation(self):
+    #     return self._rotation
+    #
+    # rotation = Property(float, rotation, setRotation)
 
-    def rotation(self):
-        return self._rotation
-
-    rotation = Property(float, rotation, setRotation)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform)
-
-        # 清除背景
-        painter.eraseRect(self.rect())
+    # def paintEvent(self, event):
+    #     painter = QPainter(self)
+    #     painter.setRenderHint(QPainter.Antialiasing)
+    #     painter.setRenderHint(QPainter.SmoothPixmapTransform)
+    #
+    #     # 清除背景
+    #     painter.eraseRect(self.rect())
 
         # 绘制旋转的图标
-        painter.translate(self.width() / 2, self.height() / 2)
-        painter.rotate(self._rotation)
-        painter.translate(-self._pixmap.width() / 2, -self._pixmap.height() / 2)
-        painter.drawPixmap(0, 0, self._pixmap)
+        # painter.translate(self.width() / 2, self.height() / 2)
+        # painter.rotate(self._rotation)
+        # painter.translate(-self._pixmap.width() / 2, -self._pixmap.height() / 2)
+        # painter.drawPixmap(0, 0, self._pixmap)
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPushButton, QWidget,
                                QHBoxLayout, QToolTip, QProgressBar)
@@ -476,7 +472,7 @@ class ImagePreviewDialog(QDialog):
         self.close_button.setFixedSize(30, 30)
         self.close_button.clicked.connect(self.close)
 
-        # 添加旋转的加载图标
+        # 添加加载动画
         self.loading_icon = RotatingLabel(self)
         self.loading_icon.setFixedSize(40, 40)
         self.loading_icon.hide()
@@ -488,6 +484,7 @@ class ImagePreviewDialog(QDialog):
         self.rotation_animation.setEndValue(360)
         self.rotation_animation.setLoopCount(-1)  # 无限循环
 
+
         # 设置窗口大小和位置
         self.updateDialogSize()
         self.centerOnScreen()
@@ -498,7 +495,7 @@ class ImagePreviewDialog(QDialog):
     def startLoading(self):
         self.loading_icon.show()
         self.loading_icon.move(10, 10)  # 放在左上角
-        self.rotation_animation.start()
+        self.loading_icon.startAnimation()
 
         # 创建并启动线程
         self.info_thread = ImageInfoThread(self.image_path)
@@ -506,8 +503,9 @@ class ImagePreviewDialog(QDialog):
         self.info_thread.start()
 
     def onInfoReceived(self, info):
+        self.loading_icon.stopAnimation()
         self.loading_icon.hide()
-        self.rotation_animation.stop()
+
         # 更新 OverlayWidget 中的信息
         self.overlay.setInfo(info)
 
