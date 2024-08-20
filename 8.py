@@ -400,7 +400,12 @@ class ImagePreviewDialog(QDialog):
         self.tooltip_rect = QRect()
 
         # 加载 PNG 图标
-        self.icon = QIcon("icons/info_icon.png")  # 替换为你的 PNG 文件路径
+        # self.icon = QIcon("icons/info_icon.png")  # 替换为你的 PNG 文件路径
+
+        icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "info_icon.png"))
+        self.icon = QIcon(icon_path)
+
+        print(f"Icon loaded: {not self.icon.isNull()}")
 
         self.centerOnScreen()
 
@@ -425,7 +430,7 @@ class ImagePreviewDialog(QDialog):
                 pixmap.height()
             )
 
-            icon_size = 40  # 增大图标尺寸
+            icon_size = 40
             tooltip_rect = QRect(
                 pixmap_rect.right() - pixmap_rect.width() * 2 // 5 - icon_size // 2,
                 pixmap_rect.bottom() - pixmap_rect.height() * 2 // 5 - icon_size // 2,
@@ -435,15 +440,20 @@ class ImagePreviewDialog(QDialog):
 
             # 绘制半透明白色背景
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(255, 255, 255, 200))  # 半透明白色
+            painter.setBrush(QColor(255, 255, 255, 200))
             painter.drawEllipse(tooltip_rect)
 
             # 绘制图标
             icon_pixmap = self.icon.pixmap(icon_size, icon_size)
-            painter.drawPixmap(tooltip_rect, icon_pixmap)
+            if not icon_pixmap.isNull():
+                painter.drawPixmap(tooltip_rect, icon_pixmap)
+            else:
+                # 如果图标加载失败，绘制一个红色矩形作为占位符
+                painter.setBrush(QColor(255, 0, 0, 150))
+                painter.drawRect(tooltip_rect)
 
             # 绘制边框
-            painter.setPen(QColor(0, 0, 0, 100))  # 半透明黑色
+            painter.setPen(QColor(0, 0, 0, 100))
             painter.setBrush(Qt.NoBrush)
             painter.drawEllipse(tooltip_rect)
 
