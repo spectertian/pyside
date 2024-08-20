@@ -384,54 +384,33 @@ class ImagePreviewDialog(QDialog):
         content_layout.addWidget(self.image_label)
 
         self.original_pixmap = QPixmap(image_path)
-        self.scale_factor = 0.75  # 设置初始缩放比例为 75%
+        self.scale_factor = 0.75
         self.updateImageSize()
 
         button_box = QDialogButtonBox(QDialogButtonBox.Close)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 
-        # 设置初始窗口大小为图片的 75%
         scaled_size = self.original_pixmap.size() * self.scale_factor
         self.resize(scaled_size)
 
-        # 添加鼠标跟踪
         self.image_label.setMouseTracking(True)
         self.image_label.mouseMoveEvent = self.on_mouse_move
 
-        # 定义提示区域
         self.tooltip_rect = QRect()
 
-        # 加载图标
-        self.icon = QIcon("icons/info_icon.png")  # 替换为你的图标路径
+        # 加载 PNG 图标
+        self.icon = QIcon("icons/info_icon.png")  # 替换为你的 PNG 文件路径
 
         self.centerOnScreen()
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.updateImageSize()
-
     def updateImageSize(self):
-        if self.original_pixmap:
-            scaled_size = self.original_pixmap.size() * self.scale_factor
-            scaled_pixmap = self.original_pixmap.scaled(scaled_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.image_label.setPixmap(scaled_pixmap)
-
-            # 更新提示区域
-            rect_size = 50  # 提示区域的大小
-            self.tooltip_rect = QRect(
-                scaled_pixmap.width() - rect_size,
-                scaled_pixmap.height() - rect_size,
-                rect_size,
-                rect_size
-            )
-
-    def wheelEvent(self, event):
-        if event.angleDelta().y() > 0:
-            self.scale_factor *= 1.1  # 放大
-        else:
-            self.scale_factor *= 0.9  # 缩小
-        self.updateImageSize()
+        scaled_pixmap = self.original_pixmap.scaled(
+            self.original_pixmap.size() * self.scale_factor,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation
+        )
+        self.image_label.setPixmap(scaled_pixmap)
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -446,8 +425,7 @@ class ImagePreviewDialog(QDialog):
                 pixmap.height()
             )
 
-            # 调整图标位置到右下角五分之二处
-            icon_size = 30  # 图标大小
+            icon_size = 40  # 增大图标尺寸
             tooltip_rect = QRect(
                 pixmap_rect.right() - pixmap_rect.width() * 2 // 5 - icon_size // 2,
                 pixmap_rect.bottom() - pixmap_rect.height() * 2 // 5 - icon_size // 2,
@@ -455,14 +433,19 @@ class ImagePreviewDialog(QDialog):
                 icon_size
             )
 
-            # 绘制半透明背景
+            # 绘制半透明白色背景
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(0, 0, 0, 50))  # 半透明黑色
-            painter.drawRect(tooltip_rect)
+            painter.setBrush(QColor(255, 255, 255, 200))  # 半透明白色
+            painter.drawEllipse(tooltip_rect)
 
             # 绘制图标
-            self.icon.paint(painter, tooltip_rect)
+            icon_pixmap = self.icon.pixmap(icon_size, icon_size)
+            painter.drawPixmap(tooltip_rect, icon_pixmap)
 
+            # 绘制边框
+            painter.setPen(QColor(0, 0, 0, 100))  # 半透明黑色
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(tooltip_rect)
 
     def on_mouse_move(self, event):
         pos = event.position().toPoint()
@@ -476,8 +459,7 @@ class ImagePreviewDialog(QDialog):
                 pixmap.height()
             )
 
-            # 调整提示区域位置到右下角五分之二处
-            icon_size = 30
+            icon_size = 40  # 保持与 paintEvent 中的尺寸一致
             self.tooltip_rect = QRect(
                 pixmap_rect.right() - pixmap_rect.width() * 2 // 5 - icon_size // 2,
                 pixmap_rect.bottom() - pixmap_rect.height() * 2 // 5 - icon_size // 2,
@@ -492,17 +474,15 @@ class ImagePreviewDialog(QDialog):
             )
 
             if self.tooltip_rect.contains(img_pos):
-                QToolTip.showText(self.mapToGlobal(pos), "这是自定义文字")
+                QToolTip.showText(self.mapToGlobal(pos), "接口对接返回的数据")
             else:
                 QToolTip.hideText()
         else:
             QToolTip.hideText()
 
     def centerOnScreen(self):
-        screen = QApplication.primaryScreen().availableGeometry()
-        size = self.geometry()
-        self.move((screen.width() - size.width()) // 2,
-                  (screen.height() - size.height()) // 2)
+        screen = self.screen().availableGeometry()
+        self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
