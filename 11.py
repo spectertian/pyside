@@ -362,64 +362,22 @@ class SelectionDialog(QDialog):
     def get_selection(self):
         return self.rubberband.geometry()
 
-
-
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QScrollArea, QLabel, QDialogButtonBox, QWidget, QPushButton
-from PySide6.QtGui import QPainter, QColor, QFont, QPen, QPixmap, QIcon
-from PySide6.QtCore import Qt, QRect, QPoint, QSize
-
-
-class OverlayWidget(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.setAttribute(Qt.WA_NoSystemBackground)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
-        icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "info_icon.png"))
-        self.icon = QIcon(icon_path)
-        self.icon_size = QSize(30, 30)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        width = self.width()
-        height = self.height()
-
-        # 计算图标位置
-        icon_x = int(width * 0.8 - self.icon_size.width() / 2)
-        icon_y = int(height * 0.8 - self.icon_size.height() / 2)
-
-        # 绘制半透明白色背景
-        painter.setBrush(QColor(255, 255, 255, 200))
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(icon_x, icon_y, self.icon_size.width(), self.icon_size.height())
-
-        # 绘制图标
-        self.icon.paint(painter, QRect(icon_x, icon_y, self.icon_size.width(), self.icon_size.height()))
-
-
 class ImagePreviewDialog(QDialog):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Image Preview")
         self.setWindowFlags(self.windowFlags() | Qt.WindowMaximizeButtonHint | Qt.WindowMinimizeButtonHint)
 
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        layout = QVBoxLayout(self)
 
-        # 图片区域
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        main_layout.addWidget(self.scroll_area)
+        layout.addWidget(self.scroll_area)
 
         self.content = QWidget()
         self.scroll_area.setWidget(self.content)
 
         content_layout = QVBoxLayout(self.content)
-        content_layout.setContentsMargins(0, 0, 0, 0)
 
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
@@ -429,17 +387,25 @@ class ImagePreviewDialog(QDialog):
         self.scale_factor = 0.75
         self.updateImageSize()
 
-        # 添加覆盖层
-        self.overlay = OverlayWidget(self.image_label)
-        self.overlay.resize(self.image_label.size())
-        self.overlay.lower()
-
         button_box = QDialogButtonBox(QDialogButtonBox.Close)
         button_box.rejected.connect(self.reject)
-        main_layout.addWidget(button_box)
+        layout.addWidget(button_box)
 
         scaled_size = self.original_pixmap.size() * self.scale_factor
         self.resize(scaled_size)
+
+        self.image_label.setMouseTracking(True)
+        self.image_label.mouseMoveEvent = self.on_mouse_move
+
+        self.tooltip_rect = QRect()
+
+        # 加载 PNG 图标
+        # self.icon = QIcon("icons/info_icon.png")  # 替换为你的 PNG 文件路径
+
+        icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "info_icon.png"))
+        self.icon = QIcon(icon_path)
+
+        print(f"Icon loaded: {not self.icon.isNull()}")
 
         self.centerOnScreen()
 
@@ -450,18 +416,83 @@ class ImagePreviewDialog(QDialog):
             Qt.SmoothTransformation
         )
         self.image_label.setPixmap(scaled_pixmap)
-        if hasattr(self, 'overlay'):
-            self.overlay.resize(self.image_label.size())
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self.image_label.pixmap():
+            painter = QPainter(self)
+            pixmap_rect = self.image_label.contentsRect()
+            pixmap = self.image_label.pixmap()
+            pixmap_rect = QRect(
+                pixmap_rect.x() + (pixmap_rect.width() - pixmap.width()) // 2,
+                pixmap_rect.y() + (pixmap_rect.height() - pixmap.height()) // 2,
+                pixmap.width(),
+                pixmap.height()
+            )
+
+            icon_size = 40
+            tooltip_rect = QRect(
+                pixmap_rect.right() - pixmap_rect.width() * 2 // 5 - icon_size // 2,
+                pixmap_rect.bottom() - pixmap_rect.height() * 2 // 5 - icon_size // 2,
+                icon_size,
+                icon_size
+            )
+
+            # 绘制半透明白色背景
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(255, 255, 255, 200))
+            painter.drawEllipse(tooltip_rect)
+
+            # 绘制图标
+            icon_pixmap = self.icon.pixmap(icon_size, icon_size)
+            if not icon_pixmap.isNull():
+                painter.drawPixmap(tooltip_rect, icon_pixmap)
+            else:
+                # 如果图标加载失败，绘制一个红色矩形作为占位符
+                painter.setBrush(QColor(255, 0, 0, 150))
+                painter.drawRect(tooltip_rect)
+
+            # 绘制边框
+            painter.setPen(QColor(0, 0, 0, 100))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(tooltip_rect)
+
+    def on_mouse_move(self, event):
+        pos = event.position().toPoint()
+        pixmap_rect = self.image_label.contentsRect()
+        pixmap = self.image_label.pixmap()
+        if pixmap:
+            pixmap_rect = QRect(
+                pixmap_rect.x() + (pixmap_rect.width() - pixmap.width()) // 2,
+                pixmap_rect.y() + (pixmap_rect.height() - pixmap.height()) // 2,
+                pixmap.width(),
+                pixmap.height()
+            )
+
+            icon_size = 40  # 保持与 paintEvent 中的尺寸一致
+            self.tooltip_rect = QRect(
+                pixmap_rect.right() - pixmap_rect.width() * 2 // 5 - icon_size // 2,
+                pixmap_rect.bottom() - pixmap_rect.height() * 2 // 5 - icon_size // 2,
+                icon_size,
+                icon_size
+            )
+
+        if pixmap_rect.contains(pos):
+            img_pos = QPoint(
+                pos.x() - pixmap_rect.x(),
+                pos.y() - pixmap_rect.y()
+            )
+
+            if self.tooltip_rect.contains(img_pos):
+                QToolTip.showText(self.mapToGlobal(pos), "接口对接返回的数据")
+            else:
+                QToolTip.hideText()
+        else:
+            QToolTip.hideText()
 
     def centerOnScreen(self):
         screen = self.screen().availableGeometry()
         self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if hasattr(self, 'overlay'):
-            self.overlay.resize(self.image_label.size())
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
