@@ -363,22 +363,22 @@ class SelectionDialog(QDialog):
         return self.rubberband.geometry()
 
 
-
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QScrollArea, QLabel, QDialogButtonBox, QWidget, QPushButton
-from PySide6.QtGui import QPainter, QColor, QFont, QPen, QPixmap, QIcon
-from PySide6.QtCore import Qt, QRect, QPoint, QSize
+from PySide6.QtWidgets import QWidget, QToolTip
+from PySide6.QtGui import QPainter, QColor, QIcon
+from PySide6.QtCore import Qt, QRect, QSize, QPoint
 
 
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WA_NoSystemBackground)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setMouseTracking(True)
 
         icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "info_icon.png"))
         self.icon = QIcon(icon_path)
         self.icon_size = QSize(30, 30)
+        self.icon_rect = QRect()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -390,14 +390,21 @@ class OverlayWidget(QWidget):
         # 计算图标位置
         icon_x = int(width * 0.8 - self.icon_size.width() / 2)
         icon_y = int(height * 0.8 - self.icon_size.height() / 2)
+        self.icon_rect = QRect(icon_x, icon_y, self.icon_size.width(), self.icon_size.height())
 
         # 绘制半透明白色背景
         painter.setBrush(QColor(255, 255, 255, 200))
         painter.setPen(Qt.NoPen)
-        painter.drawEllipse(icon_x, icon_y, self.icon_size.width(), self.icon_size.height())
+        painter.drawEllipse(self.icon_rect)
 
         # 绘制图标
-        self.icon.paint(painter, QRect(icon_x, icon_y, self.icon_size.width(), self.icon_size.height()))
+        self.icon.paint(painter, self.icon_rect)
+
+    def mouseMoveEvent(self, event):
+        if self.icon_rect.contains(event.position().toPoint()):
+            QToolTip.showText(self.mapToGlobal(event.position().toPoint()), "接口对接返回的数据")
+        else:
+            QToolTip.hideText()
 
 
 class ImagePreviewDialog(QDialog):
@@ -443,6 +450,12 @@ class ImagePreviewDialog(QDialog):
 
         self.centerOnScreen()
 
+        # 添加覆盖层
+        self.overlay = OverlayWidget(self.image_label)
+        self.overlay.setGeometry(self.image_label.rect())
+        self.overlay.raise_()  # 确保覆盖层在最上层
+        self.overlay.show()
+
     def updateImageSize(self):
         scaled_pixmap = self.original_pixmap.scaled(
             self.original_pixmap.size() * self.scale_factor,
@@ -457,11 +470,11 @@ class ImagePreviewDialog(QDialog):
         screen = self.screen().availableGeometry()
         self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
 
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, 'overlay'):
-            self.overlay.resize(self.image_label.size())
-
+            self.overlay.setGeometry(self.image_label.rect())
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
