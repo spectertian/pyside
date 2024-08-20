@@ -396,6 +396,7 @@ class OverlayWidget(QWidget):
         # 加载动画
         loader_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "icons", "loading.gif"))
         self.loader_pixmap = QPixmap(loader_path)
+        self.loader_size = QSize(30, 30)
         self.loader_rect = QRect()
         self._rotation = 0
         self.animation = QPropertyAnimation(self, b"rotation")
@@ -422,28 +423,34 @@ class OverlayWidget(QWidget):
 
         width = self.width()
         height = self.height()
+        padding = 10  # 添加一些内边距
 
-        # 计算图标位置 (右下角七分之三处)
-        icon_x = int(width * (1 - 3 / 7) - self.icon_size.width() / 2)
-        icon_y = int(height * (1 - 3 / 7) - self.icon_size.height() / 2)
+        # 计算 info_icon 位置 (右下角)
+        icon_x = width - self.icon_size.width() - padding
+        icon_y = height - self.icon_size.height() - padding
         self.icon_rect = QRect(icon_x, icon_y, self.icon_size.width(), self.icon_size.height())
 
-        # 绘制半透明白色背景
+        # 计算 loader 位置 (左上角)
+        loader_x = padding
+        loader_y = padding
+        self.loader_rect = QRect(loader_x, loader_y, self.loader_size.width(), self.loader_size.height())
+
+        # 绘制 info_icon 的半透明白色背景
         painter.setBrush(QColor(255, 255, 255, 200))
         painter.setPen(Qt.NoPen)
         painter.drawEllipse(self.icon_rect)
 
+        # 绘制 info_icon
+        self.icon.paint(painter, self.icon_rect)
+
         if self.is_loading:
             # 绘制加载动画
             painter.save()
-            painter.translate(self.icon_rect.center())
+            painter.translate(self.loader_rect.center())
             painter.rotate(self._rotation)
-            painter.translate(-self.icon_rect.center())
-            painter.drawPixmap(self.icon_rect, self.loader_pixmap)
+            painter.translate(-self.loader_rect.center())
+            painter.drawPixmap(self.loader_rect, self.loader_pixmap)
             painter.restore()
-        else:
-            # 绘制图标
-            self.icon.paint(painter, self.icon_rect)
 
     def mouseMoveEvent(self, event):
         if self.icon_rect.contains(event.position().toPoint()):
