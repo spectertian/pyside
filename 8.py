@@ -82,9 +82,14 @@ class ScreenshotTool(QMainWindow):
                     }
                 """
 
-        self.capture_button = QPushButton("截图")
+        # 修改截图按钮的创建方式
+        self.capture_button = self.create_tab_button("截图", "icons/cut_icon.png")
         self.capture_button.setStyleSheet(button_style)
+
         self.capture_button.clicked.connect(self.start_capture)
+        # self.capture_button = QPushButton("截图")
+        # self.capture_button.setStyleSheet(button_style)
+        # self.capture_button.clicked.connect(self.start_capture)
 
         # Add title label
         self.title_label = QLabel("截图板")
@@ -118,36 +123,51 @@ class ScreenshotTool(QMainWindow):
         self.screenshot_list.setSpacing(10)
         self.screenshot_list.itemDoubleClicked.connect(self.show_full_screenshot)
 
-        # Refresh button
-        self.refresh_button = QPushButton("Refresh List")
-        self.refresh_button.clicked.connect(self.load_saved_screenshots)
-        self.refresh_button.setStyleSheet("""
-                    background-color: white;
-                    color: #4287f5;
-                    padding: 5px;
-                    border: none;
-                    border-radius: 3px;
-                """)
+        # # Refresh button
+        # self.refresh_button = QPushButton("Refresh List")
+        # self.refresh_button.clicked.connect(self.load_saved_screenshots)
+        # self.refresh_button.setStyleSheet("""
+        #             background-color: white;
+        #             color: #4287f5;
+        #             padding: 5px;
+        #             border: none;
+        #             border-radius: 3px;
+        #         """)
 
         bottom_layout.addWidget(self.screenshot_list)
-        bottom_layout.addWidget(self.refresh_button)
+        # bottom_layout.addWidget(self.refresh_button)
 
         self.layout.addWidget(bottom_widget)
 
         self.load_saved_screenshots()
 
     def create_tab_button(self, text, icon_path):
-        button = QPushButton(text)
-        button.setIcon(QIcon(icon_path))
+        button = QPushButton()
+        button_layout = QHBoxLayout(button)
+        button_layout.setContentsMargins(5, 5, 5, 5)
+        button_layout.setSpacing(5)
+
+        text_label = QLabel(text)
+        text_label.setStyleSheet("""
+            color: black;
+            font-size: 14px;
+            font-weight: bold;
+        """)
+
+        icon_label = QLabel()
+        icon_pixmap = QPixmap(icon_path)
+        icon_label.setPixmap(icon_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+        button_layout.addWidget(text_label)
+        button_layout.addWidget(icon_label)
+        button_layout.addStretch()
+
         button.setStyleSheet("""
             QPushButton {
                 background-color: #3268c7;
-                color: white;
                 border: none;
-                padding: 10px 20px;
+                padding: 10px;
                 text-align: left;
-                font-size: 14px;
-                font-weight: bold;
             }
             QPushButton:hover {
                 background-color: #2758b3;
@@ -156,6 +176,7 @@ class ScreenshotTool(QMainWindow):
                 background-color: #1e4c9a;
             }
         """)
+
         return button
     def start_capture(self):
         self.hide()
