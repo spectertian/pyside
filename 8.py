@@ -365,7 +365,14 @@ class SelectionDialog(QDialog):
 
 from PySide6.QtWidgets import QWidget, QToolTip
 from PySide6.QtGui import QPainter, QColor, QIcon
-from PySide6.QtCore import Qt, QRect, QSize, QPoint
+from PySide6.QtCore import Qt, QRect, QSize, QPoint, QTimer
+import time
+
+
+def get_tooltip_text():
+    # 这里模拟从接口获取数据，实际使用时替换为真实的API调用
+    time.sleep(1)  # 等待1秒
+    return "这是从接口获取的提示文本"
 
 
 class OverlayWidget(QWidget):
@@ -379,6 +386,11 @@ class OverlayWidget(QWidget):
         self.icon = QIcon(icon_path)
         self.icon_size = QSize(30, 30)
         self.icon_rect = QRect()
+
+        self.tooltip_text = ""
+        self.tooltip_timer = QTimer(self)
+        self.tooltip_timer.setSingleShot(True)
+        self.tooltip_timer.timeout.connect(self.show_tooltip)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -402,9 +414,21 @@ class OverlayWidget(QWidget):
 
     def mouseMoveEvent(self, event):
         if self.icon_rect.contains(event.position().toPoint()):
-            QToolTip.showText(self.mapToGlobal(event.position().toPoint()), "接口对接返回的数据")
+            if not self.tooltip_timer.isActive():
+                self.tooltip_timer.start(1000)  # 1秒后触发
         else:
+            self.tooltip_timer.stop()
             QToolTip.hideText()
+
+    def show_tooltip(self):
+        if not self.tooltip_text:
+            self.tooltip_text = get_tooltip_text()
+        cursor_pos = self.mapToGlobal(self.mapFromGlobal(self.cursor().pos()))
+        QToolTip.showText(cursor_pos, self.tooltip_text)
+
+    def leaveEvent(self, event):
+        self.tooltip_timer.stop()
+        QToolTip.hideText()
 
 
 class ImagePreviewDialog(QDialog):
