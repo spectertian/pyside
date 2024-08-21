@@ -34,17 +34,21 @@ class SplashScreen(QWidget):
 class ScreenshotItem(QWidget):
     def __init__(self, pixmap, filename, parent=None):
         super().__init__(parent)
-        layout = QGridLayout(self)
+        self.setMouseTracking(True)  # 启用鼠标跟踪
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(2)  # 减小间距
+        layout.setSpacing(0)
+
+        # 创建一个容器来包含图片和删除按钮
+        container = QWidget()
+        container_layout = QGridLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
 
         # 增大图片尺寸
         self.image_label = QLabel()
         self.image_label.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.image_label.setAlignment(Qt.AlignCenter)
-
-        self.filename_label = QLabel(filename)
-        self.filename_label.setAlignment(Qt.AlignCenter)
 
         self.delete_button = QPushButton()
         delete_icon = QIcon("icons/remove_icon.png")  # 确保路径正确
@@ -58,17 +62,27 @@ class ScreenshotItem(QWidget):
                 background-color: rgba(255, 0, 0, 50);
             }
         """)
-        self.delete_button.setFixedSize(24, 24)  # 稍微增大删除按钮
+        self.delete_button.setFixedSize(24, 24)
         self.delete_button.setIconSize(self.delete_button.size())
+        self.delete_button.hide()  # 初始时隐藏删除按钮
 
-        # 调整布局，使删除按钮更靠近图片
-        layout.addWidget(self.image_label, 0, 0, 1, 1)
-        layout.addWidget(self.delete_button, 0, 0, 1, 1, Qt.AlignTop | Qt.AlignRight)
-        layout.addWidget(self.filename_label, 1, 0, 1, 1)
+        # 将图片和删除按钮添加到容器中
+        container_layout.addWidget(self.image_label, 0, 0)
+        container_layout.addWidget(self.delete_button, 0, 0, Qt.AlignTop | Qt.AlignRight)
+
+        layout.addWidget(container)
+
+        # 存储文件名，但不显示
+        self.filename = filename
+
+    def enterEvent(self, event):
+        self.delete_button.show()
+
+    def leaveEvent(self, event):
+        self.delete_button.hide()
 
     def sizeHint(self):
-        return QSize(160, 190)  # 调整整体大小以适应更大的图片
-
+        return QSize(160, 160)
 class ScreenshotTool(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -275,7 +289,7 @@ class ScreenshotTool(QMainWindow):
 
     def show_full_screenshot(self, item):
         item_widget = self.screenshot_list.itemWidget(item)
-        file_path = os.path.join("screenshots", item_widget.filename_label.text())
+        file_path = os.path.join("screenshots", item_widget.filename)  # 使用 filename 属性
         preview_dialog = ImagePreviewDialog(file_path, self)
         preview_dialog.exec()
 
