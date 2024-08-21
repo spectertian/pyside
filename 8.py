@@ -34,12 +34,13 @@ class SplashScreen(QWidget):
 class ScreenshotItem(QWidget):
     def __init__(self, pixmap, filename, parent=None):
         super().__init__(parent)
-
         layout = QGridLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(2)  # 减小间距
 
+        # 增大图片尺寸
         self.image_label = QLabel()
-        self.image_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.image_label.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.image_label.setAlignment(Qt.AlignCenter)
 
         self.filename_label = QLabel(filename)
@@ -57,13 +58,16 @@ class ScreenshotItem(QWidget):
                 background-color: rgba(255, 0, 0, 50);
             }
         """)
-        self.delete_button.setFixedSize(20, 20)
+        self.delete_button.setFixedSize(24, 24)  # 稍微增大删除按钮
         self.delete_button.setIconSize(self.delete_button.size())
 
-        layout.addWidget(self.image_label, 0, 0, 1, 2)
-        layout.addWidget(self.delete_button, 0, 1, 1, 1, Qt.AlignTop | Qt.AlignRight)
-        layout.addWidget(self.filename_label, 1, 0, 1, 2)
+        # 调整布局，使删除按钮更靠近图片
+        layout.addWidget(self.image_label, 0, 0, 1, 1)
+        layout.addWidget(self.delete_button, 0, 0, 1, 1, Qt.AlignTop | Qt.AlignRight)
+        layout.addWidget(self.filename_label, 1, 0, 1, 1)
 
+    def sizeHint(self):
+        return QSize(160, 190)  # 调整整体大小以适应更大的图片
 
 class ScreenshotTool(QMainWindow):
     def __init__(self):
