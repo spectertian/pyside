@@ -23,7 +23,7 @@ class SplashScreen(QWidget):
         self.label.setPixmap(pixmap)
         layout.addWidget(self.label)
 
-        self.setFixedSize(pixmap.width()+100, pixmap.height()+100)
+        self.setFixedSize(pixmap.width()+100, pixmap.height()+120)
         self.center()
 
     def center(self):
@@ -329,35 +329,39 @@ class SaveDialog(QDialog):
 
         # Create buttons with icons
         self.save_button = QPushButton()
-        self.save_button.setIcon(QIcon("icons/confirm_icon.png"))  # 替换为实际的保存图标路径
+        save_icon = QIcon("icons/confirm_icon.png")
+        self.save_button.setIcon(save_icon)
+        self.save_button.setIconSize(QSize(40, 40))  # 增大图标尺寸
         self.save_button.clicked.connect(self.accept)
         self.save_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                border-radius: 15px;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
+                    QPushButton {
+                        background-color: transparent;
+                        border: none;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(76, 175, 80, 0.1);
+                        border-radius: 20px;
+                    }
+                """)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setIcon(QIcon("icons/cancel_icon.png"))  # 替换为实际的关闭图标路径
+        cancel_icon = QIcon("icons/cancel_icon.png")
+        self.cancel_button.setIcon(cancel_icon)
+        self.cancel_button.setIconSize(QSize(40, 40))  # 增大图标尺寸
         self.cancel_button.clicked.connect(self.reject)
         self.cancel_button.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                border-radius: 15px;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                background-color: #da190b;
-            }
-        """)
+                    QPushButton {
+                        background-color: transparent;
+                        border: none;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(244, 67, 54, 0.1);
+                        border-radius: 20px;
+                    }
+                """)
 
         # Set button size
-        button_size = 30
+        button_size = 50  # 增大按钮尺寸
         self.save_button.setFixedSize(button_size, button_size)
         self.cancel_button.setFixedSize(button_size, button_size)
 
