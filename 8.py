@@ -34,24 +34,30 @@ class SplashScreen(QWidget):
 class ScreenshotItem(QWidget):
     def __init__(self, pixmap, filename, parent=None):
         super().__init__(parent)
-        self.setMouseTracking(True)  # 启用鼠标跟踪
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(0)
+        self.setMouseTracking(True)
+        self.filename = filename
+
+        # 主布局
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
         # 创建一个容器来包含图片和删除按钮
         container = QWidget()
+        container.setStyleSheet("background-color: transparent;")
         container_layout = QGridLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setContentsMargins(5, 5, 5, 5)
         container_layout.setSpacing(0)
 
-        # 增大图片尺寸
+        # 图片标签
         self.image_label = QLabel()
-        self.image_label.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.image_label.setPixmap(pixmap.scaled(140, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.image_label.setAlignment(Qt.AlignCenter)
+        # self.image_label.setStyleSheet("background-color: white; border: 1px solid #ddd;")
 
+        # 删除按钮
         self.delete_button = QPushButton()
-        delete_icon = QIcon("icons/remove_icon.png")  # 确保路径正确
+        delete_icon = QIcon("icons/remove_icon.png")
         self.delete_button.setIcon(delete_icon)
         self.delete_button.setStyleSheet("""
             QPushButton {
@@ -64,16 +70,14 @@ class ScreenshotItem(QWidget):
         """)
         self.delete_button.setFixedSize(24, 24)
         self.delete_button.setIconSize(self.delete_button.size())
-        self.delete_button.hide()  # 初始时隐藏删除按钮
+        self.delete_button.hide()
 
-        # 将图片和删除按钮添加到容器中
+        # 将图片和删除按钮添加到容器布局
         container_layout.addWidget(self.image_label, 0, 0)
         container_layout.addWidget(self.delete_button, 0, 0, Qt.AlignTop | Qt.AlignRight)
 
-        layout.addWidget(container)
-
-        # 存储文件名，但不显示
-        self.filename = filename
+        # 将容器添加到主布局
+        main_layout.addWidget(container)
 
     def enterEvent(self, event):
         self.delete_button.show()
@@ -82,7 +86,9 @@ class ScreenshotItem(QWidget):
         self.delete_button.hide()
 
     def sizeHint(self):
-        return QSize(160, 160)
+        return QSize(150, 150)
+
+
 class ScreenshotTool(QMainWindow):
     def __init__(self):
         super().__init__()
