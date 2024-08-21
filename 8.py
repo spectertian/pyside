@@ -247,8 +247,8 @@ class ScreenshotTool(QMainWindow):
         preview_dialog.exec()
 
     def delete_screenshot(self, file_path):
-        reply = QMessageBox.question(self, 'Delete Screenshot',
-                                     'Are you sure you want to delete this screenshot?',
+        reply = QMessageBox.question(self, '删除图片',
+                                     '是否要删除图片?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             os.remove(file_path)
@@ -256,8 +256,8 @@ class ScreenshotTool(QMainWindow):
             self.image_label.clear()
 
     def delete_all_screenshots(self):
-        reply = QMessageBox.question(self, 'Delete All Screenshots',
-                                     'Are you sure you want to delete all screenshots?',
+        reply = QMessageBox.question(self, '删除全部图片',
+                                     '是否要删除全部图片?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             for filename in os.listdir("screenshots"):
@@ -472,7 +472,7 @@ class ImageInfoThread(QThread):
 class ImagePreviewDialog(QDialog):
     def __init__(self, image_path, parent=None):
         super().__init__(parent, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setWindowTitle("Image Preview")
+        self.setWindowTitle("预览")
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.image_path = image_path
 
