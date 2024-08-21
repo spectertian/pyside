@@ -34,6 +34,7 @@ class SplashScreen(QWidget):
 class ScreenshotItem(QWidget):
     def __init__(self, pixmap, filename, parent=None):
         super().__init__(parent)
+
         layout = QGridLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
 
@@ -44,20 +45,20 @@ class ScreenshotItem(QWidget):
         self.filename_label = QLabel(filename)
         self.filename_label.setAlignment(Qt.AlignCenter)
 
-        self.delete_button = QPushButton("X")
+        self.delete_button = QPushButton()
+        delete_icon = QIcon("icons/remove_icon.png")  # 确保路径正确
+        self.delete_button.setIcon(delete_icon)
         self.delete_button.setStyleSheet("""
             QPushButton {
-                background-color: #ff4d4d;
-                color: white;
-                border-radius: 10px;
-                padding: 5px;
-                font-weight: bold;
+                background-color: transparent;
+                border: none;
             }
             QPushButton:hover {
-                background-color: #ff3333;
+                background-color: rgba(255, 0, 0, 50);
             }
         """)
         self.delete_button.setFixedSize(20, 20)
+        self.delete_button.setIconSize(self.delete_button.size())
 
         layout.addWidget(self.image_label, 0, 0, 1, 2)
         layout.addWidget(self.delete_button, 0, 1, 1, 1, Qt.AlignTop | Qt.AlignRight)
