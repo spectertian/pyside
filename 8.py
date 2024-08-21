@@ -205,6 +205,18 @@ class ScreenshotTool(QMainWindow):
         self.screenshot_list.setSpacing(10)
         self.screenshot_list.itemDoubleClicked.connect(self.show_full_screenshot)
 
+        self.screenshot_list.setStyleSheet("""
+            QListWidget::item:selected {
+                background-color: transparent;
+                border: 3px solid #E2974B;
+                padding: 2px;
+            }
+            QListWidget::item:hover {
+                background-color: transparent;
+                border: 1px solid #E2974B;
+            }
+        """)
+
         bottom_layout.addWidget(self.screenshot_list)
         self.layout.addWidget(bottom_widget)
 
