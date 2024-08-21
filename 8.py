@@ -10,6 +10,27 @@ from PySide6.QtGui import (QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplic
 from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
                             QEasingCurve, Property, QEvent, QThread, QTimer)
 
+
+class SplashScreen(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+        layout = QVBoxLayout(self)
+        self.label = QLabel(self)
+        pixmap = QPixmap("icons/logo_big.png")  # 替换为您的启动画面图片路径
+        self.label.setPixmap(pixmap)
+        layout.addWidget(self.label)
+
+        self.setFixedSize(pixmap.width()+100, pixmap.height()+100)
+        self.center()
+
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QGuiApplication.primaryScreen().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 class ScreenshotItem(QWidget):
     def __init__(self, pixmap, filename, parent=None):
         super().__init__(parent)
@@ -608,8 +629,25 @@ class OverlayWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))  # 几乎完全透明的背景
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # 显示启动画面
+    splash = SplashScreen()
+    splash.show()
+
+    # 创建主窗口，但不要立即显示
     tool = ScreenshotTool()
-    tool.show()
+
+
+    # 使用 QTimer 来控制启动画面的显示时间
+    def show_main_window():
+        splash.close()
+        tool.show()
+
+
+    QTimer.singleShot(5000, show_main_window)  # 5000 毫秒 = 5 秒
+
     sys.exit(app.exec())
