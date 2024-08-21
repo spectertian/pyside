@@ -315,9 +315,11 @@ class SaveDialog(QDialog):
         image_container = QWidget()
         image_layout = QVBoxLayout(image_container)
         image_layout.setContentsMargins(0, 0, 0, 0)
+
         self.label = QLabel()
         self.label.setPixmap(pixmap)
         image_layout.addWidget(self.label)
+
         main_layout.addWidget(image_container)
 
         # Buttons container
@@ -325,9 +327,9 @@ class SaveDialog(QDialog):
         buttons_layout = QVBoxLayout(buttons_container)
         buttons_layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
 
-        # Create buttons
+        # Create buttons with icons
         self.save_button = QPushButton()
-        self.save_button.setIcon(self.style().standardIcon(QStyle.SP_DialogApplyButton))
+        self.save_button.setIcon(QIcon("icons/confirm_icon.png"))  # 替换为实际的保存图标路径
         self.save_button.clicked.connect(self.accept)
         self.save_button.setStyleSheet("""
             QPushButton {
@@ -341,7 +343,7 @@ class SaveDialog(QDialog):
         """)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setIcon(self.style().standardIcon(QStyle.SP_DialogCancelButton))
+        self.cancel_button.setIcon(QIcon("icons/cancel_icon.png"))  # 替换为实际的关闭图标路径
         self.cancel_button.clicked.connect(self.reject)
         self.cancel_button.setStyleSheet("""
             QPushButton {
@@ -366,9 +368,6 @@ class SaveDialog(QDialog):
 
         self.adjustSize()
         self.move(rect.topLeft())
-
-    # ... (其他方法保持不变)
-
 
 class SelectionDialog(QDialog):
     def __init__(self, image, parent=None):
