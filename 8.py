@@ -491,11 +491,11 @@ class ImagePreviewDialog(QDialog):
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
         image_layout.addWidget(self.image_label)
+
         main_layout.addWidget(self.image_container)
 
         # 设置图片
         self.original_pixmap = QPixmap(image_path)
-        self.scale_factor = 0.75
         self.updateImageSize()
 
         # 添加 OverlayWidget
@@ -504,17 +504,17 @@ class ImagePreviewDialog(QDialog):
 
         # 添加关闭按钮
         self.close_button = QPushButton(self)
-        self.close_button.setIcon(QIcon("icons/close_icon.png"))  # 替换为实际的关闭图标路径
+        self.close_button.setIcon(QIcon("icons/close_icon.png"))
         self.close_button.setStyleSheet("""
-                    QPushButton {
-                        background-color: #FF5555;
-                        border: none;
-                        border-radius: 15px;
-                    }
-                    QPushButton:hover {
-                        background-color: #FF0000;
-                    }
-                """)
+            QPushButton {
+                background-color: #FF5555;
+                border: none;
+                border-radius: 15px;
+            }
+            QPushButton:hover {
+                background-color: #FF0000;
+            }
+        """)
         self.close_button.setFixedSize(30, 30)
         self.close_button.clicked.connect(self.close)
 
@@ -523,14 +523,6 @@ class ImagePreviewDialog(QDialog):
         self.loading_icon.setFixedSize(40, 40)
         self.loading_icon.hide()
 
-        # 创建旋转动画
-        self.rotation_animation = QPropertyAnimation(self.loading_icon, b"rotation")
-        self.rotation_animation.setDuration(1000)
-        self.rotation_animation.setStartValue(0)
-        self.rotation_animation.setEndValue(360)
-        self.rotation_animation.setLoopCount(-1)  # 无限循环
-
-
         # 设置窗口大小和位置
         self.updateDialogSize()
         self.centerOnScreen()
@@ -538,26 +530,13 @@ class ImagePreviewDialog(QDialog):
         # 启动加载过程
         self.startLoading()
 
-    def startLoading(self):
-        self.loading_icon.show()
-        self.loading_icon.move(10, 10)  # 放在左上角
-        self.loading_icon.startAnimation()
-
-        # 创建并启动线程
-        self.info_thread = ImageInfoThread(self.image_path)
-        self.info_thread.info_received.connect(self.onInfoReceived)
-        self.info_thread.start()
-
-    def onInfoReceived(self, info):
-        self.loading_icon.stopAnimation()
-        self.loading_icon.hide()
-
-        # 更新 OverlayWidget 中的信息
-        self.overlay.setInfo(info)
-
     def updateImageSize(self):
+        screen = QGuiApplication.primaryScreen().geometry()
+        max_width = int(screen.width() * 0.7)
+        max_height = int(screen.height() * 0.7)
+
         scaled_pixmap = self.original_pixmap.scaled(
-            self.original_pixmap.size() * self.scale_factor,
+            max_width, max_height,
             Qt.KeepAspectRatio,
             Qt.SmoothTransformation
         )
@@ -581,6 +560,21 @@ class ImagePreviewDialog(QDialog):
         self.close_button.move(self.width() - 40, 10)
         self.overlay.updateInfoButtonPosition()
 
+    def startLoading(self):
+        self.loading_icon.show()
+        self.loading_icon.move(10, 10)  # 放在左上角
+        self.loading_icon.startAnimation()
+
+        # 创建并启动线程
+        self.info_thread = ImageInfoThread(self.image_path)
+        self.info_thread.info_received.connect(self.onInfoReceived)
+        self.info_thread.start()
+
+    def onInfoReceived(self, info):
+        self.loading_icon.stopAnimation()
+        self.loading_icon.hide()
+        # 更新 OverlayWidget 中的信息
+        self.overlay.setInfo(info)
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
