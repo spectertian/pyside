@@ -23,7 +23,7 @@ class SplashScreen(QWidget):
         self.label.setPixmap(pixmap)
         layout.addWidget(self.label)
 
-        self.setFixedSize(pixmap.width()+100, pixmap.height()+120)
+        self.setFixedSize(pixmap.width()+120, pixmap.height()+140)
         self.center()
 
     def center(self):
@@ -506,16 +506,16 @@ class ImagePreviewDialog(QDialog):
         self.close_button = QPushButton(self)
         self.close_button.setIcon(QIcon("icons/close_icon.png"))
         self.close_button.setStyleSheet("""
-            QPushButton {
-                background-color: #FF5555;
-                border: none;
-                border-radius: 15px;
-            }
-            QPushButton:hover {
-                background-color: #FF0000;
-            }
-        """)
-        self.close_button.setFixedSize(30, 30)
+                    QPushButton {
+                        background-color: transparent;
+                        border: none;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(255, 0, 0, 50);
+                    }
+                """)
+        self.close_button.setFixedSize(40, 40)  # 增大按钮尺寸
+        self.close_button.setIconSize(QSize(30, 30))  # 增大图标尺寸
         self.close_button.clicked.connect(self.close)
 
         # 添加加载动画
@@ -548,17 +548,19 @@ class ImagePreviewDialog(QDialog):
         self.setFixedSize(dialog_size.width() + 40, dialog_size.height() + 20)  # 为按钮预留空间
         self.image_container.setFixedSize(dialog_size)
         self.overlay.setGeometry(self.image_container.geometry())
-        self.close_button.move(self.width() - 40, 10)
+        self.close_button.move(self.width() - 50, 10)  # 调整按钮位置
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.overlay.setGeometry(self.image_container.rect())
+        self.close_button.move(self.width() - 50, 10)  # 调整按钮位置
+        self.overlay.updateInfoButtonPosition()
 
     def centerOnScreen(self):
         screen = self.screen().availableGeometry()
         self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.overlay.setGeometry(self.image_container.rect())
-        self.close_button.move(self.width() - 40, 10)
-        self.overlay.updateInfoButtonPosition()
+
 
     def startLoading(self):
         self.loading_icon.show()
