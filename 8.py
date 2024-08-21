@@ -142,7 +142,7 @@ class ScreenshotTool(QMainWindow):
                 text-align: left;  /* 文字左对齐 */
             }
             QPushButton:hover {
-                background-color: #3268c7;
+                background-color: #651FFF;
             }
             QPushButton:pressed {
                 background-color: #2758b3;
