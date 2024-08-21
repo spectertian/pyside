@@ -103,12 +103,7 @@ class ScreenshotTool(QMainWindow):
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         buttons_layout.setSpacing(20)
 
-        # Create capture button with icon
-        capture_button_container = QWidget()
-        capture_button_layout = QHBoxLayout(capture_button_container)
-        capture_button_layout.setContentsMargins(0, 0, 0, 0)
-        capture_button_layout.setSpacing(5)
-
+        # Create capture button
         self.capture_button = QPushButton("截图")
         self.capture_button.setStyleSheet("""
             QPushButton {
@@ -127,13 +122,6 @@ class ScreenshotTool(QMainWindow):
             }
         """)
         self.capture_button.clicked.connect(self.start_capture)
-
-        capture_icon_label = QLabel()
-        capture_icon_pixmap = QPixmap("icons/cut_icon.png")  # 替换为你的截图图标路径
-        capture_icon_label.setPixmap(capture_icon_pixmap.scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
-        capture_button_layout.addWidget(self.capture_button)
-        capture_button_layout.addWidget(capture_icon_label)
 
         # Add title label
         self.title_label = QLabel("截图板")
@@ -164,7 +152,7 @@ class ScreenshotTool(QMainWindow):
         """)
         self.delete_all_button.clicked.connect(self.delete_all_screenshots)
 
-        buttons_layout.addWidget(capture_button_container)
+        buttons_layout.addWidget(self.capture_button)
         buttons_layout.addStretch(1)
         buttons_layout.addWidget(self.title_label)
         buttons_layout.addStretch(1)
@@ -190,8 +178,6 @@ class ScreenshotTool(QMainWindow):
         self.layout.addWidget(bottom_widget)
 
         self.load_saved_screenshots()
-
-    # ... 其他方法保持不变 ...
 
     # ... 其他方法保持不变 ...
     def create_tab_button(self, text, icon_path):
