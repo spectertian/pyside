@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
 from PySide6.QtGui import (QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication,
                            QImage, QTransform,QCursor)
 from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
-                            QEasingCurve, Property, QEvent, QThread, QTimer)
+                            QEasingCurve, Property, QEvent, QThread, QTimer, QThreadPool)
 
 import traceback
 
@@ -151,7 +151,8 @@ class ScreenshotTool(QMainWindow):
                     }
                 """)
         self.close_button.setFixedSize(48, 48)  # 设置固定大小，与logo大小一致
-        self.close_button.clicked.connect(self.close)  # 连接到关闭功能
+        # self.close_button.clicked.connect(self.close)  # 连接到关闭功能
+        self.close_button.clicked.connect(self.close_application)  # 修改这里
         icon_layout.addWidget(self.close_button)
 
         top_layout.addWidget(icon_container)
@@ -304,6 +305,16 @@ class ScreenshotTool(QMainWindow):
         self.screen_capture = None
         self.is_capturing = False  # 新增标志
 
+        self.thread_pool = QThreadPool()
+
+    def close_application(self):
+        # 关闭所有子窗口
+        for window in QApplication.topLevelWidgets():
+            window.close()
+
+        # 退出应用程序
+        QApplication.quit()
+
     def close(self):
         """
         重写关闭方法，清理资源并终止所有进程
@@ -345,6 +356,31 @@ class ScreenshotTool(QMainWindow):
         if QApplication.instance().topLevelWindows() == 0:
             print("No more windows, quitting application...")
             QApplication.instance().quit()
+    def closeEvent(self, event):
+        print("Close event triggered")
+        if self.is_capturing:
+            event.ignore()  # 如果正在截图，忽略关闭事件
+            print("Close event ignored due to ongoing capture")
+            self.is_capturing= False
+        else:
+            event.accept()  # 否则接受关闭事件
+            print("Close event accepted")
+            self.thread_pool.clear()
+            self.thread_pool.waitForDone()
+
+            # 关闭所有可能的子窗口
+            for child in self.findChildren(QWidget):
+                child.close()
+
+            # 调用基类的 closeEvent
+            super().closeEvent(event)
+            self.close_application()
+            event.accept()
+
+    def show_window(self):
+        print("Showing main window")
+        self.show()
+        self.activateWindow()  # 确保窗口被激活
     def enterEvent(self, event):
         if not self.is_expanded and self.is_at_top:
             self.expand()
@@ -560,20 +596,7 @@ class ScreenshotTool(QMainWindow):
             self.image_label.clear()
 
 
-    def closeEvent(self, event):
-        print("Close event triggered")
-        if self.is_capturing:
-            event.ignore()  # 如果正在截图，忽略关闭事件
-            print("Close event ignored due to ongoing capture")
-            self.is_capturing= False
-        else:
-            event.accept()  # 否则接受关闭事件
-            print("Close event accepted")
 
-    def show_window(self):
-        print("Showing main window")
-        self.show()
-        self.activateWindow()  # 确保窗口被激活
 from PySide6.QtCore import Signal, QRect, QPoint
 
 class ScreenCapture(QWidget):
@@ -1015,8 +1038,15 @@ if __name__ == "__main__":
         QTimer.singleShot(5000, show_main_window)
         # app.lastWindowClosed.connect(app.quit)
         # app.lastWindowClosed.connect(app.quit)
-        sys.exit(app.exec())
 
+        # 使用 app.quit() 来确保应用程序正确退出
+        app.aboutToQuit.connect(app.deleteLater)
+        sys.exit(app.exec())
+        # exit_code = app.exec()        # 确保所有窗口都被关闭
+        # app.closeAllWindows()
+        #
+        # # 退出程序
+        # sys.exit(exit_code)
 
     except Exception as e:
         print(f"An error occurred: {e}")
