@@ -282,23 +282,9 @@ class ScreenshotTool(QMainWindow):
             self.is_dragging = True
             self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
             event.accept()
-
-    def mouseMoveEvent(self, event):
-        if self.is_dragging:
-            self.move(event.globalPosition().toPoint() - self.drag_position)
-            event.accept()
-
     def mouseReleaseEvent(self, event):
         self.is_dragging = False
         self.snap_to_edge()
-
-    def snap_to_edge(self):
-        screen = QGuiApplication.primaryScreen().geometry()
-        pos = self.pos()
-        if pos.y() < 10:
-            self.move(pos.x(), 0)
-        elif pos.y() > screen.height() - 10:
-            self.move(pos.x(), screen.height() - self.collapsed_height)
 
     def expand(self):
         if not self.is_expanded:
