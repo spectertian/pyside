@@ -10,6 +10,15 @@ from PySide6.QtGui import (QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplic
 from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
                             QEasingCurve, Property, QEvent, QThread, QTimer)
 
+import traceback
+
+from PySide6.QtWidgets import QApplication
+
+def global_exception_handler(exctype, value, traceback):
+    print("Unhandled exception:", exctype, value)
+    print("Traceback:")
+    import traceback as tb
+    tb.print_tb(traceback)
 
 class SplashScreen(QWidget):
     def __init__(self):
@@ -458,14 +467,24 @@ class ScreenshotTool(QMainWindow):
     #             self.load_saved_screenshots()
 
     def handle_screenshot(self, pixmap, rect):
-        if pixmap:
-            save_dialog = SaveDialog(pixmap, rect, self)
-            result = save_dialog.exec()
-            if result == QDialog.Accepted:
-                filename = f"screenshot_{len(os.listdir('screenshots')) + 1}.png"
-                pixmap.save(os.path.join("screenshots", filename))
-                self.load_saved_screenshots()
-            self.show()  # Show the main window after the dialog is closed
+        try:
+            if pixmap:
+                save_dialog = SaveDialog(pixmap, rect, self)
+                result = save_dialog.exec()
+                if result == QDialog.Accepted:
+                    filename = f"screenshot_{len(os.listdir('screenshots')) + 1}.png"
+                    file_path = os.path.join("screenshots", filename)
+                    pixmap.save(file_path)
+                    print(f"Screenshot saved: {file_path}")
+                    self.load_saved_screenshots()
+                else:
+                    print("Screenshot cancelled")
+            self.show()  # Always show the main window after the dialog is closed
+        except Exception as e:
+            print(f"Error in handle_screenshot: {e}")
+            traceback.print_exc()
+        finally:
+            self.show()  # Ensure the main window is shown regardless of what happened
 
     def load_saved_screenshots(self):
         self.screenshot_list.clear()
@@ -474,13 +493,16 @@ class ScreenshotTool(QMainWindow):
         for filename in os.listdir("screenshots"):
             file_path = os.path.join("screenshots", filename)
             pixmap = QPixmap(file_path)
-            item_widget = ScreenshotItem(pixmap, filename)
-            item_widget.delete_button.clicked.connect(lambda checked=False, fp=file_path: self.delete_screenshot(fp))
-
-            item = QListWidgetItem(self.screenshot_list)
-            item.setSizeHint(item_widget.sizeHint())
-            self.screenshot_list.addItem(item)
-            self.screenshot_list.setItemWidget(item, item_widget)
+            if not pixmap.isNull():
+                item_widget = ScreenshotItem(pixmap, filename)
+                item_widget.delete_button.clicked.connect(
+                    lambda checked=False, fp=file_path: self.delete_screenshot(fp))
+                item = QListWidgetItem(self.screenshot_list)
+                item.setSizeHint(item_widget.sizeHint())
+                self.screenshot_list.addItem(item)
+                self.screenshot_list.setItemWidget(item, item_widget)
+            else:
+                print(f"Failed to load image: {file_path}")
 
     def show_full_screenshot(self, item):
         item_widget = self.screenshot_list.itemWidget(item)
@@ -493,9 +515,13 @@ class ScreenshotTool(QMainWindow):
                                      '是否要删除图片?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            os.remove(file_path)
-            self.load_saved_screenshots()
-            self.image_label.clear()
+            try:
+                os.remove(file_path)
+                print(f"File {file_path} has been deleted.")
+            except Exception as e:
+                print(f"Error deleting file {file_path}: {e}")
+            finally:
+                self.load_saved_screenshots()
 
     def delete_all_screenshots(self):
         reply = QMessageBox.question(self, '删除全部图片',
@@ -567,76 +593,90 @@ class ScreenCapture(QWidget):
 
 class SaveDialog(QDialog):
     def __init__(self, pixmap, rect, parent=None):
-        super().__init__(parent, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
-        self.setWindowTitle("Save Screenshot")
-        self.pixmap = pixmap
-        self.setStyleSheet("background-color: transparent;")
+        try:
+            super().__init__(parent, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
+            self.setWindowTitle("Save Screenshot")
+            self.pixmap = pixmap
+            self.setStyleSheet("background-color: transparent;")
 
-        main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+            main_layout = QHBoxLayout(self)
+            main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Image container
-        image_container = QWidget()
-        image_layout = QVBoxLayout(image_container)
-        image_layout.setContentsMargins(0, 0, 0, 0)
+            # Image container
+            image_container = QWidget()
+            image_layout = QVBoxLayout(image_container)
+            image_layout.setContentsMargins(0, 0, 0, 0)
+            self.label = QLabel()
+            self.label.setPixmap(pixmap)
+            image_layout.addWidget(self.label)
+            main_layout.addWidget(image_container)
 
-        self.label = QLabel()
-        self.label.setPixmap(pixmap)
-        image_layout.addWidget(self.label)
+            # Buttons container
+            buttons_container = QWidget()
+            buttons_layout = QVBoxLayout(buttons_container)
+            buttons_layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
 
-        main_layout.addWidget(image_container)
+            # Create buttons with icons
+            self.save_button = QPushButton()
+            save_icon = QIcon("icons/confirm_icon.png")
+            self.save_button.setIcon(save_icon)
+            self.save_button.setIconSize(QSize(40, 40))
+            self.save_button.clicked.connect(self.accept)
+            self.save_button.setStyleSheet("""
+                        QPushButton {
+                            background-color: transparent;
+                            border: none;
+                        }
+                        QPushButton:hover {
+                            background-color: rgba(76, 175, 80, 0.1);
+                            border-radius: 20px;
+                        }
+                    """)
 
-        # Buttons container
-        buttons_container = QWidget()
-        buttons_layout = QVBoxLayout(buttons_container)
-        buttons_layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
+            self.cancel_button = QPushButton()
+            cancel_icon = QIcon("icons/cancel_icon.png")
+            self.cancel_button.setIcon(cancel_icon)
+            self.cancel_button.setIconSize(QSize(40, 40))
+            self.cancel_button.clicked.connect(self.reject)
+            self.cancel_button.setStyleSheet("""
+                        QPushButton {
+                            background-color: transparent;
+                            border: none;
+                        }
+                        QPushButton:hover {
+                            background-color: rgba(244, 67, 54, 0.1);
+                            border-radius: 20px;
+                        }
+                    """)
 
-        # Create buttons with icons
-        self.save_button = QPushButton()
-        save_icon = QIcon("icons/confirm_icon.png")
-        self.save_button.setIcon(save_icon)
-        self.save_button.setIconSize(QSize(40, 40))  # 增大图标尺寸
-        self.save_button.clicked.connect(self.accept)
-        self.save_button.setStyleSheet("""
-                    QPushButton {
-                        background-color: transparent;
-                        border: none;
-                    }
-                    QPushButton:hover {
-                        background-color: rgba(76, 175, 80, 0.1);
-                        border-radius: 20px;
-                    }
-                """)
+            # Set button size
+            button_size = 50
+            self.save_button.setFixedSize(button_size, button_size)
+            self.cancel_button.setFixedSize(button_size, button_size)
 
-        self.cancel_button = QPushButton()
-        cancel_icon = QIcon("icons/cancel_icon.png")
-        self.cancel_button.setIcon(cancel_icon)
-        self.cancel_button.setIconSize(QSize(40, 40))  # 增大图标尺寸
-        self.cancel_button.clicked.connect(self.reject)
-        self.cancel_button.setStyleSheet("""
-                    QPushButton {
-                        background-color: transparent;
-                        border: none;
-                    }
-                    QPushButton:hover {
-                        background-color: rgba(244, 67, 54, 0.1);
-                        border-radius: 20px;
-                    }
-                """)
+            buttons_layout.addWidget(self.save_button)
+            buttons_layout.addWidget(self.cancel_button)
+            main_layout.addWidget(buttons_container)
 
-        # Set button size
-        button_size = 50  # 增大按钮尺寸
-        self.save_button.setFixedSize(button_size, button_size)
-        self.cancel_button.setFixedSize(button_size, button_size)
+            self.adjustSize()
+            self.move(rect.topLeft())
+        except Exception as e:
+            print(f"Error in SaveDialog initialization: {e}")
+            traceback.print_exc()
 
-        buttons_layout.addWidget(self.save_button)
-        buttons_layout.addWidget(self.cancel_button)
+    def accept(self):
+        try:
+            super().accept()
+        except Exception as e:
+            print(f"Error in SaveDialog accept: {e}")
+            traceback.print_exc()
 
-        main_layout.addWidget(buttons_container)
-
-        self.adjustSize()
-        self.move(rect.topLeft())
-
+    def reject(self):
+        try:
+            super().reject()
+        except Exception as e:
+            print(f"Error in SaveDialog reject: {e}")
+            traceback.print_exc()
 class SelectionDialog(QDialog):
     def __init__(self, image, parent=None):
         super().__init__(parent, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
@@ -896,6 +936,8 @@ class OverlayWidget(QWidget):
 
 
 if __name__ == "__main__":
+    sys.excepthook = global_exception_handler
+
     app = QApplication(sys.argv)
 
     # 显示启动画面
