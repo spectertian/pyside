@@ -76,7 +76,7 @@ class ScreenshotItem(QWidget):
 
         # 删除按钮
         self.delete_button = QPushButton()
-        delete_icon = QIcon("icons/remove_icon.png")
+        delete_icon = QIcon(resource_path("icons/remove_icon.png"))
         self.delete_button.setIcon(delete_icon)
         self.delete_button.setStyleSheet("""
             QPushButton {
