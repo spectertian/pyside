@@ -6,5 +6,6 @@ pyi-makespec --onefile --windowed --add-data "icons/*;icons/" --add-data "screen
 
 
 pyinstaller --clean screen.spec
+pyinstaller screen.spec
 
 ```

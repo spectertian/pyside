@@ -517,7 +517,7 @@ class ScreenshotTool(QMainWindow):
         """)
 
         icon_label = QLabel()
-        icon_pixmap = QPixmap(icon_path)
+        icon_pixmap = QPixmap(resource_path(icon_path))
         icon_label.setPixmap(icon_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
         button_layout.addWidget(text_label)
