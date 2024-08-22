@@ -305,7 +305,46 @@ class ScreenshotTool(QMainWindow):
         self.is_capturing = False  # 新增标志
 
     def close(self):
+        """
+        重写关闭方法，清理资源并终止所有进程
+        """
+        print("Closing ScreenshotTool...")
+
+        # 停止所有可能正在运行的线程
+        if hasattr(self, 'info_thread') and self.info_thread.isRunning():
+            print("Stopping info thread...")
+            self.info_thread.quit()
+            self.info_thread.wait()
+
+        # 关闭所有可能打开的对话框
+        for child in self.findChildren(QDialog):
+            print(f"Closing dialog: {child}")
+            child.close()
+
+        # 停止所有动画
+        if hasattr(self, 'animation'):
+            print("Stopping animation...")
+            self.animation.stop()
+
+        # 释放资源
+        if hasattr(self, 'screen_capture') and self.screen_capture is not None:
+            print("Deleting screen capture...")
+            self.screen_capture.deleteLater()
+        else:
+            print("No screen capture to delete.")
+
+        # 保存任何需要保存的设置
+        print("Saving settings...")
+        # 这里添加保存设置的代码，如果有的话
+
+        # 关闭主窗口
+        print("Closing main window...")
         super().close()
+
+        # 如果这是最后一个窗口，退出应用
+        if QApplication.instance().topLevelWindows() == 0:
+            print("No more windows, quitting application...")
+            QApplication.instance().quit()
     def enterEvent(self, event):
         if not self.is_expanded and self.is_at_top:
             self.expand()
@@ -435,17 +474,19 @@ class ScreenshotTool(QMainWindow):
 
     def start_capture(self):
         print("Starting capture")
-        self.is_capturing = True  # 设置标志
+        self.is_capturing = True
         self.hide()
         print("Main window hidden")
+
+        # 清理旧的 screen_capture 对象
+        if self.screen_capture is not None:
+            self.screen_capture.deleteLater()
+
         self.screen_capture = ScreenCapture()
         self.screen_capture.screenshot_taken.connect(self.handle_screenshot)
         print("About to show screen capture")
         self.screen_capture.show()
         print("Screen capture shown")
-
-        # 添加一个短暂的延迟
-        QTimer.singleShot(100, self.screen_capture.activateWindow)
 
     def handle_screenshot(self, pixmap, rect):
         print("Handling screenshot")
@@ -962,8 +1003,9 @@ if __name__ == "__main__":
             tool.show()
 
 
-        QTimer.singleShot(500, show_main_window)
-
+        QTimer.singleShot(5000, show_main_window)
+        # app.lastWindowClosed.connect(app.quit)
+        # app.lastWindowClosed.connect(app.quit)
         sys.exit(app.exec())
 
 
