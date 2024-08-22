@@ -93,14 +93,15 @@ class ScreenshotTool(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("截图工具")
-        self.setGeometry(100, 100, 200, 500)
+        self.setGeometry(100, 100, 300, 500)  # 增加宽度到 400
+
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        # Top area: buttons with blue background
+        # Top area: buttons with purple background
         top_widget = QWidget()
         top_widget.setStyleSheet("background-color: #651FFF;")
         top_layout = QVBoxLayout(top_widget)
@@ -112,24 +113,20 @@ class ScreenshotTool(QMainWindow):
         icon_layout = QHBoxLayout(icon_container)
         icon_layout.setContentsMargins(0, 0, 0, 0)
         icon_layout.setAlignment(Qt.AlignLeft)
-
         icon_label = QLabel()
-        icon_pixmap = QPixmap("icons/logo_small.png")  # 替换为你的图标路径
+        icon_pixmap = QPixmap("icons/logo_small.png")
         icon_label.setPixmap(icon_pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         icon_layout.addWidget(icon_label)
-        icon_layout.addStretch(1)  # 添加伸缩项，使图标左对齐
-
+        icon_layout.addStretch(1)
         top_layout.addWidget(icon_container)
 
         # Buttons container
         buttons_widget = QWidget()
         buttons_layout = QHBoxLayout(buttons_widget)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_layout.setSpacing(20)
+        buttons_layout.setSpacing(10)
 
-        # Create capture button with icon
-        # 创建包含文字和图标的截图按钮
-        # 创建包含文字和图标的截图按钮
+        # 创建截图按钮
         self.capture_button = QPushButton("截图")
         self.capture_button.setStyleSheet("""
             QPushButton {
@@ -152,22 +149,19 @@ class ScreenshotTool(QMainWindow):
         # 设置图标
         icon = QIcon("icons/cut_icon.png")  # 确保路径正确
         self.capture_button.setIcon(icon)
-        self.capture_button.setIconSize(QSize(24, 24))  # 设置图标大小
-
-        # 设置文字和图标的间距
-        self.capture_button.setStyleSheet(self.capture_button.styleSheet() +
-                                          "QPushButton { padding-left: 5px; padding-right: 10px; }")
+        self.capture_button.setIconSize(QSize(24, 24))
         self.capture_button.clicked.connect(self.start_capture)
-        # Add title label
+
+        # 标题标签
         self.title_label = QLabel("截图板")
         self.title_label.setStyleSheet("""
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-        """)
+                    color: white;
+                    font-size: 18px;
+                    font-weight: bold;
+                """)
         self.title_label.setAlignment(Qt.AlignCenter)
 
-        # Add delete all button
+        # 全部清空按钮
         self.delete_all_button = QPushButton("全部清空")
         self.delete_all_button.setStyleSheet("""
             QPushButton {
@@ -188,7 +182,6 @@ class ScreenshotTool(QMainWindow):
 
         self.delete_all_button.clicked.connect(self.delete_all_screenshots)
 
-        # buttons_layout.addWidget(capture_button_container)
         buttons_layout.addWidget(self.capture_button)
         buttons_layout.addStretch(1)
         buttons_layout.addWidget(self.title_label)
@@ -196,10 +189,9 @@ class ScreenshotTool(QMainWindow):
         buttons_layout.addWidget(self.delete_all_button)
 
         top_layout.addWidget(buttons_widget)
-
         self.layout.addWidget(top_widget)
 
-        # Bottom area: content with pink background
+        # Bottom area: content with light background
         bottom_widget = QWidget()
         bottom_widget.setStyleSheet("background-color: #EFEFEF;")
         bottom_layout = QVBoxLayout(bottom_widget)
@@ -210,7 +202,6 @@ class ScreenshotTool(QMainWindow):
         self.screenshot_list.setResizeMode(QListWidget.Adjust)
         self.screenshot_list.setSpacing(10)
         self.screenshot_list.itemDoubleClicked.connect(self.show_full_screenshot)
-
         self.screenshot_list.setStyleSheet("""
             QListWidget::item:selected {
                 background-color: transparent;
@@ -224,6 +215,7 @@ class ScreenshotTool(QMainWindow):
         """)
 
         bottom_layout.addWidget(self.screenshot_list)
+
         self.layout.addWidget(bottom_widget)
 
         self.load_saved_screenshots()
@@ -256,7 +248,7 @@ class ScreenshotTool(QMainWindow):
 
         self.expanded_height = 500
         self.collapsed_height = 5
-        self.setFixedWidth(200)
+        self.setFixedWidth(300)  # 设置固定宽度为 400
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
