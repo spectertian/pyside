@@ -620,21 +620,29 @@ class ScreenCapture(QWidget):
         self.finished.emit()  # 发射 finished 信号
         self.close()
 
+
 class SaveDialog(QDialog):
     def __init__(self, pixmap, rect, parent=None):
         try:
             super().__init__(parent, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
             self.setWindowTitle("Save Screenshot")
             self.pixmap = pixmap
+
+            # 设置整个对话框背景透明
+            self.setAttribute(Qt.WA_TranslucentBackground)
             self.setStyleSheet("background-color: transparent;")
 
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
+            main_layout.setSpacing(0)
 
             # Image container
             image_container = QWidget()
+            image_container.setAttribute(Qt.WA_TranslucentBackground)
             image_layout = QVBoxLayout(image_container)
             image_layout.setContentsMargins(0, 0, 0, 0)
+            image_layout.setSpacing(0)
+
             self.label = QLabel()
             self.label.setPixmap(pixmap)
             image_layout.addWidget(self.label)
@@ -642,8 +650,11 @@ class SaveDialog(QDialog):
 
             # Buttons container
             buttons_container = QWidget()
+            buttons_container.setAttribute(Qt.WA_TranslucentBackground)
             buttons_layout = QVBoxLayout(buttons_container)
             buttons_layout.setAlignment(Qt.AlignBottom | Qt.AlignRight)
+            buttons_layout.setContentsMargins(10, 10, 10, 10)
+            buttons_layout.setSpacing(10)
 
             # Create buttons with icons
             self.save_button = QPushButton()
@@ -652,15 +663,15 @@ class SaveDialog(QDialog):
             self.save_button.setIconSize(QSize(40, 40))
             self.save_button.clicked.connect(self.accept)
             self.save_button.setStyleSheet("""
-                        QPushButton {
-                            background-color: transparent;
-                            border: none;
-                        }
-                        QPushButton:hover {
-                            background-color: rgba(76, 175, 80, 0.1);
-                            border-radius: 20px;
-                        }
-                    """)
+                QPushButton {
+                    background-color: transparent;
+                    border: none;
+                }
+                QPushButton:hover {
+                    background-color: rgba(76, 175, 80, 0.3);
+                    border-radius: 20px;
+                }
+            """)
 
             self.cancel_button = QPushButton()
             cancel_icon = QIcon("icons/cancel_icon.png")
@@ -668,15 +679,15 @@ class SaveDialog(QDialog):
             self.cancel_button.setIconSize(QSize(40, 40))
             self.cancel_button.clicked.connect(self.reject)
             self.cancel_button.setStyleSheet("""
-                        QPushButton {
-                            background-color: transparent;
-                            border: none;
-                        }
-                        QPushButton:hover {
-                            background-color: rgba(244, 67, 54, 0.1);
-                            border-radius: 20px;
-                        }
-                    """)
+                QPushButton {
+                    background-color: transparent;
+                    border: none;
+                }
+                QPushButton:hover {
+                    background-color: rgba(244, 67, 54, 0.3);
+                    border-radius: 20px;
+                }
+            """)
 
             # Set button size
             button_size = 50
@@ -689,23 +700,23 @@ class SaveDialog(QDialog):
 
             self.adjustSize()
             self.move(rect.topLeft())
+
         except Exception as e:
             print(f"Error in SaveDialog initialization: {e}")
             traceback.print_exc()
-
-    def accept(self):
-        try:
-            super().accept()
-        except Exception as e:
-            print(f"Error in SaveDialog accept: {e}")
-            traceback.print_exc()
-
-    def reject(self):
-        try:
-            super().reject()
-        except Exception as e:
-            print(f"Error in SaveDialog reject: {e}")
-            traceback.print_exc()
+    # def accept(self):
+    #     try:
+    #         super().accept()
+    #     except Exception as e:
+    #         print(f"Error in SaveDialog accept: {e}")
+    #         traceback.print_exc()
+    #
+    # def reject(self):
+    #     try:
+    #         super().reject()
+    #     except Exception as e:
+    #         print(f"Error in SaveDialog reject: {e}")
+    #         traceback.print_exc()
 class SelectionDialog(QDialog):
     def __init__(self, image, parent=None):
         super().__init__(parent, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
