@@ -21,7 +21,15 @@ def global_exception_handler(exctype, value, traceback):
     print("Traceback:")
     import traceback as tb
     tb.print_tb(traceback)
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
 
+    return os.path.join(base_path, relative_path)
 class SplashScreen(QWidget):
     def __init__(self):
         super().__init__()
@@ -30,7 +38,7 @@ class SplashScreen(QWidget):
 
         layout = QVBoxLayout(self)
         self.label = QLabel(self)
-        pixmap = QPixmap("icons/logo_big.png")  # 替换为您的启动画面图片路径
+        pixmap = QPixmap(resource_path("icons/logo_big.png"))  # 替换为您的启动画面图片路径
         self.label.setPixmap(pixmap)
         layout.addWidget(self.label)
 
@@ -127,7 +135,7 @@ class ScreenshotTool(QMainWindow):
 
         # Logo
         icon_label = QLabel()
-        icon_pixmap = QPixmap("icons/logo_small.png")
+        icon_pixmap = QPixmap(resource_path("icons/logo_small.png"))
         icon_label.setPixmap(icon_pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         icon_layout.addWidget(icon_label)
 
@@ -135,7 +143,7 @@ class ScreenshotTool(QMainWindow):
 
         # Close button
         self.close_button = QPushButton()
-        close_icon = QIcon("icons/close_icon.png")  # 请确保您有一个合适的关闭图标
+        close_icon = QIcon(resource_path("icons/close_icon.png"))  # 请确保您有一个合适的关闭图标
         self.close_button.setIcon(close_icon)
         self.close_button.setIconSize(QSize(24, 24))
         self.close_button.setStyleSheet("""
@@ -184,7 +192,7 @@ class ScreenshotTool(QMainWindow):
         """)
 
         # 设置图标
-        icon = QIcon("icons/cut_icon.png")  # 确保路径正确
+        icon = QIcon(resource_path("icons/cut_icon.png"))  # 确保路径正确
         self.capture_button.setIcon(icon)
         self.capture_button.setIconSize(QSize(24, 24))
         self.capture_button.clicked.connect(self.start_capture)
@@ -706,7 +714,7 @@ class SaveDialog(QDialog):
 
             # Create buttons with icons
             self.save_button = QPushButton()
-            save_icon = QIcon("icons/confirm_icon.png")
+            save_icon = QIcon(resource_path("icons/confirm_icon.png"))
             self.save_button.setIcon(save_icon)
             self.save_button.setIconSize(QSize(40, 40))
             self.save_button.clicked.connect(self.accept)
@@ -722,7 +730,7 @@ class SaveDialog(QDialog):
             """)
 
             self.cancel_button = QPushButton()
-            cancel_icon = QIcon("icons/cancel_icon.png")
+            cancel_icon = QIcon(resource_path("icons/cancel_icon.png"))
             self.cancel_button.setIcon(cancel_icon)
             self.cancel_button.setIconSize(QSize(40, 40))
             self.cancel_button.clicked.connect(self.reject)
@@ -807,7 +815,7 @@ class RotatingLabel(QLabel):
         self.setAttribute(Qt.WA_TranslucentBackground)  # 允许透明背景
 
         # 创建 QMovie 对象
-        self.movie = QMovie("icons/loading.gif")
+        self.movie = QMovie(resource_path("icons/loading.gif"))
         self.movie.setScaledSize(QSize(40, 40))  # 设置 GIF 大小
         self.setMovie(self.movie)
         self.movie.start()
@@ -896,7 +904,7 @@ class ImagePreviewDialog(QDialog):
 
         # 添加关闭按钮
         self.close_button = QPushButton(self)
-        self.close_button.setIcon(QIcon("icons/close_icon.png"))
+        self.close_button.setIcon(QIcon(resource_path("icons/close_icon.png")))
         self.close_button.setStyleSheet("""
                     QPushButton {
                         background-color: transparent;
@@ -976,7 +984,7 @@ class OverlayWidget(QWidget):
         self.setMouseTracking(True)
 
         self.info_button = QPushButton(self)
-        self.info_button.setIcon(QIcon("icons/info_icon.png"))  # 替换为实际的信息图标路径
+        self.info_button.setIcon(QIcon(resource_path("icons/info_icon.png")))  # 替换为实际的信息图标路径
         self.info_button.setStyleSheet("""
             QPushButton {
                 background-color: rgba(255, 255, 255, 150);
