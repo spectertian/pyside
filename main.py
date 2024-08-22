@@ -29,9 +29,7 @@ def global_exception_handler(exctype, value, traceback):
     import traceback as tb
     tb.print_tb(traceback)
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
@@ -45,7 +43,7 @@ class SplashScreen(QWidget):
 
         layout = QVBoxLayout(self)
         self.label = QLabel(self)
-        pixmap = QPixmap(resource_path("icons/logo_big.png"))  # 替换为您的启动画面图片路径
+        pixmap = QPixmap(resource_path("icons/logo_big.png"))
         self.label.setPixmap(pixmap)
         layout.addWidget(self.label)
 
@@ -63,24 +61,20 @@ class ScreenshotItem(QWidget):
         self.setMouseTracking(True)
         self.filename = filename
 
-        # 主布局
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 创建一个容器来包含图片和删除按钮
         container = QWidget()
         container.setStyleSheet("background-color: transparent;")
         container_layout = QGridLayout(container)
         container_layout.setContentsMargins(5, 5, 5, 5)
         container_layout.setSpacing(0)
 
-        # 图片标签
         self.image_label = QLabel()
         self.image_label.setPixmap(pixmap.scaled(140, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.image_label.setAlignment(Qt.AlignCenter)
 
-        # 删除按钮
         self.delete_button = QPushButton()
         delete_icon = QIcon(resource_path("icons/remove_icon.png"))
         self.delete_button.setIcon(delete_icon)
@@ -97,11 +91,9 @@ class ScreenshotItem(QWidget):
         self.delete_button.setIconSize(self.delete_button.size())
         self.delete_button.hide()
 
-        # 将图片和删除按钮添加到容器布局
         container_layout.addWidget(self.image_label, 0, 0)
         container_layout.addWidget(self.delete_button, 0, 0, Qt.AlignTop | Qt.AlignRight)
 
-        # 将容器添加到主布局
         main_layout.addWidget(container)
 
     def enterEvent(self, event):
@@ -126,30 +118,26 @@ class ScreenshotTool(QMainWindow):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        # Top area: buttons with purple background
         top_widget = QWidget()
         top_widget.setStyleSheet("background-color: #651FFF;")
         top_layout = QVBoxLayout(top_widget)
         top_layout.setContentsMargins(10, 10, 10, 10)
         top_layout.setSpacing(10)
 
-        # Logo icon
         icon_container = QWidget()
         icon_layout = QHBoxLayout(icon_container)
         icon_layout.setContentsMargins(0, 0, 0, 0)
         icon_layout.setSpacing(0)
 
-        # Logo
         icon_label = QLabel()
         icon_pixmap = QPixmap(resource_path("icons/logo_small.png"))
         icon_label.setPixmap(icon_pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         icon_layout.addWidget(icon_label)
 
-        icon_layout.addStretch(1)  # 添加伸缩项，使logo靠左，关闭按钮靠右
+        icon_layout.addStretch(1)
 
-        # Close button
         self.close_button = QPushButton()
-        close_icon = QIcon(resource_path("icons/close_icon.png"))  # 请确保您有一个合适的关闭图标
+        close_icon = QIcon(resource_path("icons/close_icon.png"))
         self.close_button.setIcon(close_icon)
         self.close_button.setIconSize(QSize(24, 24))
         self.close_button.setStyleSheet("""
@@ -164,20 +152,17 @@ class ScreenshotTool(QMainWindow):
                         background-color: rgba(255, 255, 255, 0.1);
                     }
                 """)
-        self.close_button.setFixedSize(48, 48)  # 设置固定大小，与logo大小一致
-        # self.close_button.clicked.connect(self.close)  # 连接到关闭功能
-        self.close_button.clicked.connect(self.close_application)  # 修改这里
+        self.close_button.setFixedSize(48, 48)
+        self.close_button.clicked.connect(self.close_application)
         icon_layout.addWidget(self.close_button)
 
         top_layout.addWidget(icon_container)
 
-        # Buttons container
         buttons_widget = QWidget()
         buttons_layout = QHBoxLayout(buttons_widget)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         buttons_layout.setSpacing(10)
 
-        # 创建截图按钮
         self.capture_button = QPushButton("截图")
         self.capture_button.setStyleSheet("""
             QPushButton {
@@ -187,7 +172,7 @@ class ScreenshotTool(QMainWindow):
                 padding: 5px 10px;
                 font-size: 14px;
                 font-weight: bold;
-                text-align: left;  /* 文字左对齐 */
+                text-align: left; 
             }
             QPushButton:hover {
                 background-color: #651FFF;
@@ -197,13 +182,11 @@ class ScreenshotTool(QMainWindow):
             }
         """)
 
-        # 设置图标
-        icon = QIcon(resource_path("icons/cut_icon.png"))  # 确保路径正确
+        icon = QIcon(resource_path("icons/cut_icon.png"))
         self.capture_button.setIcon(icon)
         self.capture_button.setIconSize(QSize(24, 24))
         self.capture_button.clicked.connect(self.start_capture)
 
-        # 标题标签
         self.title_label = QLabel("截图板")
         self.title_label.setStyleSheet("""
                     color: white;
@@ -212,22 +195,21 @@ class ScreenshotTool(QMainWindow):
                 """)
         self.title_label.setAlignment(Qt.AlignCenter)
 
-        # 全部清空按钮
         self.delete_all_button = QPushButton("全部清空")
         self.delete_all_button.setStyleSheet("""
             QPushButton {
-                background-color: transparent;  /* 透明背景 */
+                background-color: transparent; 
                 color: black;
-                border: none;  /* 无边框 */
+                border: none; 
                 padding: 5px 10px;
                 font-size: 14px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: rgba(50, 104, 199, 0.1);  /* 半透明的悬停效果 */
+                background-color: rgba(50, 104, 199, 0.1);  
             }
             QPushButton:pressed {
-                background-color: rgba(39, 88, 179, 0.2);  /* 半透明的按下效果 */
+                background-color: rgba(39, 88, 179, 0.2); 
             }
         """)
 
@@ -272,7 +254,7 @@ class ScreenshotTool(QMainWindow):
         self.load_saved_screenshots()
 
         self.expanded_height = 500
-        self.collapsed_height = 20  # 减小收缩高度
+        self.collapsed_height = 20
         self.setFixedWidth(400)
 
         self.is_expanded = True
@@ -299,7 +281,7 @@ class ScreenshotTool(QMainWindow):
 
         self.expanded_height = 500
         self.collapsed_height = 5
-        self.setFixedWidth(300)  # 设置固定宽度为 400
+        self.setFixedWidth(300)
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -308,7 +290,6 @@ class ScreenshotTool(QMainWindow):
         self.is_at_top = True
         self.drag_position = None
 
-        # 创建一个用于收缩状态的小部件
         self.collapsed_widget = QWidget(self)
         self.collapsed_widget.setStyleSheet("background-color: #651FFF; border-radius: 2px;")
         self.collapsed_widget.setFixedHeight(self.collapsed_height)
@@ -317,23 +298,23 @@ class ScreenshotTool(QMainWindow):
         self.collapsed_widget.hide()
 
         self.screen_capture = None
-        self.is_capturing = False  # 新增标志
+        self.is_capturing = False
 
         self.thread_pool = QThreadPool()
-        self.setWindowFlags(Qt.FramelessWindowHint)  # 移除默认的窗口框架
-        self.setAttribute(Qt.WA_TranslucentBackground)  # 允许使用透明背景
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.setStyleSheet("""
                     QMainWindow {
-                        background-color: #FFFFFF;  # 设置背景色，可以根据需要调整
-                        border-radius: 10px;  # 设置圆角半径，可以根据需要调整
+                        background-color: #FFFFFF;
+                        border-radius: 10px;
                     }
                 """)
 
         self.set_rounded_corners()
 
     def set_rounded_corners(self):
-        radius = 10  # 圆角半径，可以根据需要调整
+        radius = 10
         path = QPainterPath()
         path.addRoundedRect(self.rect(), radius, radius)
         mask = QRegion(path.toFillPolygon().toPolygon())
@@ -343,72 +324,61 @@ class ScreenshotTool(QMainWindow):
 
         if not self.is_expanded:
             self.collapsed_widget.setFixedSize(self.width(), self.collapsed_height)
-        self.set_rounded_corners()  # 在窗口大小改变时重新设置圆角
+        self.set_rounded_corners()
 
 
     def close_application(self):
-        # 关闭所有子窗口
         for window in QApplication.topLevelWidgets():
             window.close()
 
-        # 退出应用程序
         QApplication.quit()
 
     def close(self):
         print("Closing ScreenshotTool...")
 
-        # 停止所有可能正在运行的线程
         if hasattr(self, 'info_thread') and self.info_thread.isRunning():
             print("Stopping info thread...")
             self.info_thread.quit()
             self.info_thread.wait()
 
-        # 关闭所有可能打开的对话框
         for child in self.findChildren(QDialog):
             print(f"Closing dialog: {child}")
             child.close()
 
-        # 停止所有动画
         if hasattr(self, 'animation'):
             print("Stopping animation...")
             self.animation.stop()
 
-        # 释放资源
         if hasattr(self, 'screen_capture') and self.screen_capture is not None:
             print("Deleting screen capture...")
             self.screen_capture.deleteLater()
         else:
             print("No screen capture to delete.")
 
-        # 保存任何需要保存的设置
         print("Saving settings...")
-        # 这里添加保存设置的代码，如果有的话
 
         # 关闭主窗口
         print("Closing main window...")
         super().close()
 
-        # 如果这是最后一个窗口，退出应用
         if QApplication.instance().topLevelWindows() == 0:
             print("No more windows, quitting application...")
             QApplication.instance().quit()
     def closeEvent(self, event):
         print("Close event triggered")
         if self.is_capturing:
-            event.ignore()  # 如果正在截图，忽略关闭事件
+            event.ignore()
             print("Close event ignored due to ongoing capture")
             self.is_capturing= False
         else:
-            event.accept()  # 否则接受关闭事件
+            event.accept()
             print("Close event accepted")
             self.thread_pool.clear()
             self.thread_pool.waitForDone()
 
-            # 关闭所有可能的子窗口
             for child in self.findChildren(QWidget):
                 child.close()
 
-            # 调用基类的 closeEvent
             super().closeEvent(event)
             self.close_application()
             event.accept()
@@ -416,7 +386,7 @@ class ScreenshotTool(QMainWindow):
     def show_window(self):
         print("Showing main window")
         self.show()
-        self.activateWindow()  # 确保窗口被激活
+        self.activateWindow()
     def enterEvent(self, event):
         if not self.is_expanded and self.is_at_top:
             self.expand()
@@ -442,7 +412,7 @@ class ScreenshotTool(QMainWindow):
         self.check_top_edge()
 
     def check_top_edge(self):
-        if self.y() <= 10:  # 允许一些误差
+        if self.y() <= 10:
             self.move(self.x(), 0)
             self.is_at_top = True
         else:
@@ -459,7 +429,6 @@ class ScreenshotTool(QMainWindow):
         if pos.y() < 10:
             self.move(pos.x(), screen_geometry.top())
             self.at_top_edge = True
-            # 只有在鼠标释放且窗口在顶部时才触发收缩
             if self.is_expanded:
                 self.collapse()
         else:
@@ -545,7 +514,6 @@ class ScreenshotTool(QMainWindow):
         self.hide()
         print("Main window hidden")
 
-        # 清理旧的 screen_capture 对象
         if self.screen_capture is not None:
             self.screen_capture.deleteLater()
 
@@ -573,10 +541,7 @@ class ScreenshotTool(QMainWindow):
             print(f"Error in handle_screenshot: {e}")
             traceback.print_exc()
         finally:
-            print("Screenshot handling complete")
-            self.show()  # 确保主窗口总是被显示
-            print("Showing main window")
-            # self.is_capturing = False  # 重置标志
+            self.show()
 
     def load_saved_screenshots(self):
         self.screenshot_list.clear()
@@ -598,7 +563,7 @@ class ScreenshotTool(QMainWindow):
 
     def show_full_screenshot(self, item):
         item_widget = self.screenshot_list.itemWidget(item)
-        file_path = os.path.join("screenshots", item_widget.filename)  # 使用 filename 属性
+        file_path = os.path.join("screenshots", item_widget.filename)
         preview_dialog = ImagePreviewDialog(file_path, self)
         preview_dialog.exec()
 
@@ -632,7 +597,7 @@ from PySide6.QtCore import Signal, QRect, QPoint
 
 class ScreenCapture(QWidget):
     screenshot_taken = Signal(QPixmap, QRect)
-    finished = Signal()  # 添加这行
+    finished = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Window)
@@ -652,7 +617,6 @@ class ScreenCapture(QWidget):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
-            print("Escape key pressed, closing ScreenCapture")
             self.close()
     def mousePressEvent(self, event):
         self.begin = event.position().toPoint()
@@ -671,7 +635,7 @@ class ScreenCapture(QWidget):
             screen = QApplication.primaryScreen()
             pixmap = screen.grabWindow(0, rect.x(), rect.y(), rect.width(), rect.height())
             self.screenshot_taken.emit(pixmap, rect)
-        self.finished.emit()  # 发射 finished 信号
+        self.finished.emit()
         self.close()
 
 
@@ -679,10 +643,9 @@ class SaveDialog(QDialog):
     def __init__(self, pixmap, rect, parent=None):
         try:
             super().__init__(parent, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
-            self.setWindowTitle("Save Screenshot")
+            self.setWindowTitle("保存截图")
             self.pixmap = pixmap
 
-            # 设置整个对话框背景透明
             self.setAttribute(Qt.WA_TranslucentBackground)
             self.setStyleSheet("background-color: transparent;")
 
@@ -690,7 +653,6 @@ class SaveDialog(QDialog):
             main_layout.setContentsMargins(0, 0, 0, 0)
             main_layout.setSpacing(0)
 
-            # Image container
             image_container = QWidget()
             image_container.setAttribute(Qt.WA_TranslucentBackground)
             image_layout = QVBoxLayout(image_container)
@@ -702,7 +664,6 @@ class SaveDialog(QDialog):
             image_layout.addWidget(self.label)
             main_layout.addWidget(image_container)
 
-            # Buttons container
             buttons_container = QWidget()
             buttons_container.setAttribute(Qt.WA_TranslucentBackground)
             buttons_layout = QVBoxLayout(buttons_container)
@@ -710,7 +671,6 @@ class SaveDialog(QDialog):
             buttons_layout.setContentsMargins(10, 10, 10, 10)
             buttons_layout.setSpacing(10)
 
-            # Create buttons with icons
             self.save_button = QPushButton()
             save_icon = QIcon(resource_path("icons/confirm_icon.png"))
             self.save_button.setIcon(save_icon)
@@ -743,7 +703,6 @@ class SaveDialog(QDialog):
                 }
             """)
 
-            # Set button size
             button_size = 50
             self.save_button.setFixedSize(button_size, button_size)
             self.cancel_button.setFixedSize(button_size, button_size)
@@ -809,12 +768,11 @@ from PySide6.QtCore import Qt, QSize
 class RotatingLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(40, 40)  # 设置固定大小
-        self.setAttribute(Qt.WA_TranslucentBackground)  # 允许透明背景
+        self.setFixedSize(40, 40)
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
-        # 创建 QMovie 对象
         self.movie = QMovie(resource_path("icons/loading.gif"))
-        self.movie.setScaledSize(QSize(40, 40))  # 设置 GIF 大小
+        self.movie.setScaledSize(QSize(40, 40))
         self.setMovie(self.movie)
         self.movie.start()
 
@@ -847,33 +805,27 @@ class ImagePreviewDialog(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.image_path = image_path
 
-        # 主布局
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # 图片容器
         self.image_container = QWidget(self)
         self.image_container.setStyleSheet("background-color: white; border-radius: 10px;")
         image_layout = QVBoxLayout(self.image_container)
         image_layout.setContentsMargins(10, 10, 10, 10)
 
-        # 图片标签
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
         image_layout.addWidget(self.image_label)
 
         main_layout.addWidget(self.image_container)
 
-        # 设置图片
         self.original_pixmap = QPixmap(image_path)
         self.updateImageSize()
 
-        # 添加 OverlayWidget
         self.overlay = OverlayWidget(self.image_container)
         self.overlay.setGeometry(self.image_container.rect())
 
-        # 添加关闭按钮
         self.close_button = QPushButton(self)
         self.close_button.setIcon(QIcon(resource_path("icons/close_icon.png")))
         self.close_button.setStyleSheet("""
@@ -885,20 +837,17 @@ class ImagePreviewDialog(QDialog):
                         background-color: rgba(255, 0, 0, 50);
                     }
                 """)
-        self.close_button.setFixedSize(40, 40)  # 增大按钮尺寸
-        self.close_button.setIconSize(QSize(30, 30))  # 增大图标尺寸
+        self.close_button.setFixedSize(40, 40)
+        self.close_button.setIconSize(QSize(30, 30))
         self.close_button.clicked.connect(self.close)
 
-        # 添加加载动画
         self.loading_icon = RotatingLabel(self)
         self.loading_icon.setFixedSize(40, 40)
         self.loading_icon.hide()
 
-        # 设置窗口大小和位置
         self.updateDialogSize()
         self.centerOnScreen()
 
-        # 启动加载过程
         self.startLoading()
 
     def updateImageSize(self):
@@ -915,16 +864,16 @@ class ImagePreviewDialog(QDialog):
 
     def updateDialogSize(self):
         image_size = self.image_label.pixmap().size()
-        dialog_size = QSize(image_size.width() + 20, image_size.height() + 20)  # 20是边距
-        self.setFixedSize(dialog_size.width() + 40, dialog_size.height() + 20)  # 为按钮预留空间
+        dialog_size = QSize(image_size.width() + 20, image_size.height() + 20)
+        self.setFixedSize(dialog_size.width() + 40, dialog_size.height() + 20)
         self.image_container.setFixedSize(dialog_size)
         self.overlay.setGeometry(self.image_container.geometry())
-        self.close_button.move(self.width() - 50, 10)  # 调整按钮位置
+        self.close_button.move(self.width() - 50, 10)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.overlay.setGeometry(self.image_container.rect())
-        self.close_button.move(self.width() - 50, 10)  # 调整按钮位置
+        self.close_button.move(self.width() - 50, 10)
         self.overlay.updateInfoButtonPosition()
 
     def centerOnScreen(self):
@@ -935,10 +884,9 @@ class ImagePreviewDialog(QDialog):
 
     def startLoading(self):
         self.loading_icon.show()
-        self.loading_icon.move(10, 10)  # 放在左上角
+        self.loading_icon.move(10, 10)
         self.loading_icon.startAnimation()
 
-        # 创建并启动线程
         self.info_thread = ImageInfoThread(self.image_path)
         self.info_thread.info_received.connect(self.onInfoReceived)
         self.info_thread.start()
@@ -946,7 +894,6 @@ class ImagePreviewDialog(QDialog):
     def onInfoReceived(self, info):
         self.loading_icon.stopAnimation()
         self.loading_icon.hide()
-        # 更新 OverlayWidget 中的信息
         self.overlay.setInfo(info)
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
@@ -955,7 +902,7 @@ class OverlayWidget(QWidget):
         self.setMouseTracking(True)
 
         self.info_button = QPushButton(self)
-        self.info_button.setIcon(QIcon(resource_path("icons/info_icon.png")))  # 替换为实际的信息图标路径
+        self.info_button.setIcon(QIcon(resource_path("icons/info_icon.png")))
         self.info_button.setStyleSheet("""
             QPushButton {
                 background-color: rgba(255, 255, 255, 150);
@@ -993,19 +940,19 @@ class OverlayWidget(QWidget):
         QToolTip.hideText()
 
     def updateInfoButtonPosition(self):
-        x = int(self.width() * 0.9)  # 90% 从左边
-        y = int(self.height() * 0.1)  # 10% 从上边
+        x = int(self.width() * 0.9)
+        y = int(self.height() * 0.1)
         self.info_button.move(x - self.info_button.width(), y)
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor(0, 0, 0, 1))  # 几乎完全透明的背景
+        painter.fillRect(self.rect(), QColor(0, 0, 0, 1))
 
 
 class GlobalEventFilter(QObject):
     def eventFilter(self, obj, event):
         try:
-            return False  # 不处理事件，让它继续传播
+            return False
         except Exception as e:
             print(f"Exception in event filter: {e}")
             traceback.print_exc()
@@ -1032,8 +979,6 @@ if __name__ == "__main__":
 
         QTimer.singleShot(5000, show_main_window)
 
-
-        # 使用 app.quit() 来确保应用程序正确退出
         app.aboutToQuit.connect(app.deleteLater)
         sys.exit(app.exec())
 
