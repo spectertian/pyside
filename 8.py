@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
                                QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
                                QScrollArea, QMessageBox, QGridLayout, QToolTip,QStyle)
 from PySide6.QtGui import (QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication,
-                           QImage, QTransform,QCursor)
+                           QImage, QTransform, QCursor, QPainterPath, QRegion)
 from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
                             QEasingCurve, Property, QEvent, QThread, QTimer, QThreadPool)
 
@@ -306,6 +306,31 @@ class ScreenshotTool(QMainWindow):
         self.is_capturing = False  # 新增标志
 
         self.thread_pool = QThreadPool()
+        self.setWindowFlags(Qt.FramelessWindowHint)  # 移除默认的窗口框架
+        self.setAttribute(Qt.WA_TranslucentBackground)  # 允许使用透明背景
+
+        self.setStyleSheet("""
+                    QMainWindow {
+                        background-color: #FFFFFF;  # 设置背景色，可以根据需要调整
+                        border-radius: 10px;  # 设置圆角半径，可以根据需要调整
+                    }
+                """)
+
+        self.set_rounded_corners()
+
+    def set_rounded_corners(self):
+        radius = 10  # 圆角半径，可以根据需要调整
+        path = QPainterPath()
+        path.addRoundedRect(self.rect(), radius, radius)
+        mask = QRegion(path.toFillPolygon().toPolygon())
+        self.setMask(mask)
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+
+        if not self.is_expanded:
+            self.collapsed_widget.setFixedSize(self.width(), self.collapsed_height)
+        self.set_rounded_corners()  # 在窗口大小改变时重新设置圆角
+
 
     def close_application(self):
         # 关闭所有子窗口
@@ -458,10 +483,10 @@ class ScreenshotTool(QMainWindow):
     def handle_clicked(self, event):
         self.expand()
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if not self.is_expanded:
-            self.collapsed_widget.setFixedSize(self.width(), self.collapsed_height)
+    # def resizeEvent(self, event):
+    #     super().resizeEvent(event)
+    #     if not self.is_expanded:
+    #         self.collapsed_widget.setFixedSize(self.width(), self.collapsed_height)
 
     def showEvent(self, event):
         super().showEvent(event)
