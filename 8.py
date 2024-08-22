@@ -93,7 +93,7 @@ class ScreenshotTool(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("截图工具")
-        self.setGeometry(100, 100, 800, 500)
+        self.setGeometry(100, 100, 200, 500)
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
@@ -229,8 +229,8 @@ class ScreenshotTool(QMainWindow):
         self.load_saved_screenshots()
 
         self.expanded_height = 500
-        self.collapsed_height = 10
-        self.setFixedWidth(200)
+        self.collapsed_height = 20  # 减小收缩高度
+        self.setFixedWidth(400)
 
         self.is_expanded = True
         self.is_dragging = False
@@ -255,51 +255,45 @@ class ScreenshotTool(QMainWindow):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.expanded_height = 500
-        self.collapsed_height = 40  # 增加收缩高度，显示一小部分主窗口
+        self.collapsed_height = 5  # 设置为一个很小的高度
         self.setFixedWidth(200)
 
-        self.handle = QWidget(self)
-        self.handle.setStyleSheet("background-color: #651FFF; border-radius: 5px;")
-        self.handle.setFixedSize(50, 10)
-        self.handle.setCursor(Qt.PointingHandCursor)
-        self.handle.mousePressEvent = self.handle_clicked
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+        # 创建一个用于收缩状态的小部件
+        self.collapsed_widget = QWidget(self)
+        self.collapsed_widget.setStyleSheet("background-color: #651FFF; border-radius: 2px;")
+        self.collapsed_widget.setFixedHeight(self.collapsed_height)
+        self.collapsed_widget.setCursor(Qt.PointingHandCursor)
+        self.collapsed_widget.mousePressEvent = self.handle_clicked
+        self.collapsed_widget.hide()
 
     def enterEvent(self, event):
-        if self.at_top_edge and not self.is_expanded:
-            self.expand_timer.start(200)
+        if not self.is_expanded:
+            self.expand()
         self.collapse_timer.stop()
 
     def leaveEvent(self, event):
-        if self.at_top_edge and self.is_expanded:
-            # 检查鼠标是否真的离开了窗口区域
+        if self.is_expanded:
             cursor_pos = QCursor.pos()
             if not self.geometry().contains(cursor_pos):
                 self.collapse_timer.start(500)
-        self.expand_timer.stop()
+
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.is_dragging = True
             self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-            event.accept()
 
     def mouseMoveEvent(self, event):
-        if self.is_dragging:
-            new_pos = event.globalPosition().toPoint() - self.drag_position
-            screen = QGuiApplication.screenAt(new_pos)
-            if screen:
-                self.screen = screen
-            self.move(self.constrainToScreen(new_pos))
-            self.check_top_edge()
-            # 确保在拖动过程中窗口保持展开状态
-            if not self.is_expanded:
-                self.expand()
-            event.accept()
+        if event.buttons() & Qt.LeftButton:
+            self.move(event.globalPosition().toPoint() - self.drag_position)
 
     def mouseReleaseEvent(self, event):
-        self.is_dragging = False
-        self.snap_to_edge()
+        self.snap_to_top()
 
+    def snap_to_top(self):
+        self.move(self.x(), 0)
     def snap_to_edge(self):
         screen_geometry = self.screen.availableGeometry()
         pos = self.pos()
@@ -341,30 +335,31 @@ class ScreenshotTool(QMainWindow):
         self.at_top_edge = self.y() == self.screen.availableGeometry().top()
 
     def collapse(self):
-        if self.is_expanded and self.at_top_edge:
+        if self.is_expanded:
             self.animation.setStartValue(self.geometry())
-            self.animation.setEndValue(QRect(self.x(), self.y(), self.width(), self.collapsed_height))
+            self.animation.setEndValue(QRect(self.x(), 0, self.width(), self.collapsed_height))
             self.animation.start()
             self.is_expanded = False
-            self.handle.show()
-            self.handle.move(self.width() // 2 - 25, self.collapsed_height - 15)
+            self.central_widget.hide()
+            self.collapsed_widget.show()
+            self.collapsed_widget.setFixedSize(self.width(), self.collapsed_height)
 
     def expand(self):
         if not self.is_expanded:
             self.animation.setStartValue(self.geometry())
-            self.animation.setEndValue(QRect(self.x(), self.y(), self.width(), self.expanded_height))
+            self.animation.setEndValue(QRect(self.x(), 0, self.width(), self.expanded_height))
             self.animation.start()
             self.is_expanded = True
-            self.handle.hide()
+            self.central_widget.show()
+            self.collapsed_widget.hide()
 
     def handle_clicked(self, event):
-        if not self.is_expanded:
-            self.expand()
+        self.expand()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if not self.is_expanded:
-            self.handle.move(self.width() // 2 - 25, self.collapsed_height - 15)
+            self.collapsed_widget.setFixedSize(self.width(), self.collapsed_height)
 
     def showEvent(self, event):
         super().showEvent(event)
