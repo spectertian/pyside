@@ -16,6 +16,24 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget, QRubberBand, QApplication, QLabel
 from PySide6.QtCore import Qt, QRect, QPoint, Signal, QTimer
 from PySide6.QtGui import QPixmap, QGuiApplication
+
+
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPushButton, QWidget,
+                               QHBoxLayout, QToolTip, QProgressBar)
+from PySide6.QtGui import QPixmap, QIcon, QPainter, QColor,QEventPoint
+from PySide6.QtCore import Qt, QPoint, QSize, Signal, QTimer, QThread, Signal
+
+
+from PySide6.QtCore import QObject, Qt, QRect, QPoint, Signal, QTimer, QSize
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
+                               QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
+                               QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
+                               QScrollArea, QMessageBox, QGridLayout, QToolTip)
+
+import sys
+import os
+import time
+import traceback
 def global_exception_handler(exctype, value, traceback):
     print("Unhandled exception:", exctype, value)
     print("Traceback:")
@@ -491,11 +509,6 @@ class ScreenshotTool(QMainWindow):
     def handle_clicked(self, event):
         self.expand()
 
-    # def resizeEvent(self, event):
-    #     super().resizeEvent(event)
-    #     if not self.is_expanded:
-    #         self.collapsed_widget.setFixedSize(self.width(), self.collapsed_height)
-
     def showEvent(self, event):
         super().showEvent(event)
         self.expand()
@@ -826,34 +839,7 @@ class RotatingLabel(QLabel):
     def stopAnimation(self):
         self.movie.stop()
 
-    # def setRotation(self, rotation):
-    #     self._rotation = rotation
-    #     self.update()
-    #
-    # def rotation(self):
-    #     return self._rotation
-    #
-    # rotation = Property(float, rotation, setRotation)
 
-    # def paintEvent(self, event):
-    #     painter = QPainter(self)
-    #     painter.setRenderHint(QPainter.Antialiasing)
-    #     painter.setRenderHint(QPainter.SmoothPixmapTransform)
-    #
-    #     # 清除背景
-    #     painter.eraseRect(self.rect())
-
-        # 绘制旋转的图标
-        # painter.translate(self.width() / 2, self.height() / 2)
-        # painter.rotate(self._rotation)
-        # painter.translate(-self._pixmap.width() / 2, -self._pixmap.height() / 2)
-        # painter.drawPixmap(0, 0, self._pixmap)
-
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPushButton, QWidget,
-                               QHBoxLayout, QToolTip, QProgressBar)
-from PySide6.QtGui import QPixmap, QIcon, QPainter, QColor,QEventPoint
-from PySide6.QtCore import Qt, QPoint, QSize, Signal, QTimer, QThread, Signal
-import time
 
 class ImageInfoThread(QThread):
     info_received = Signal(str)
@@ -1030,16 +1016,7 @@ class OverlayWidget(QWidget):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))  # 几乎完全透明的背景
 
-from PySide6.QtCore import QObject, Qt, QRect, QPoint, Signal, QTimer, QSize
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
-                               QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
-                               QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
-                               QScrollArea, QMessageBox, QGridLayout, QToolTip)
 
-import sys
-import os
-import time
-import traceback
 class GlobalEventFilter(QObject):
     def eventFilter(self, obj, event):
         try:
