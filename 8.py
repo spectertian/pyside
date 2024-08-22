@@ -584,17 +584,15 @@ class ScreenCapture(QWidget):
         super().__init__(parent, Qt.Window)
         print("Initializing ScreenCapture")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setStyleSheet("background-color: rgba(0, 0, 0, 100);")  # 半透明黑色
+        self.setStyleSheet("background-color:black")
+        self.setWindowOpacity(0.3)
         screen = QApplication.primaryScreen().geometry()
         self.setGeometry(screen)
         self.begin = QPoint()
         self.end = QPoint()
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
-        # 添加一个标签，以确保有可见内容
-        self.label = QLabel("Click and drag to capture", self)
-        self.label.setStyleSheet("color: white; font-size: 24px; background-color: rgba(0, 0, 0, 150);")
-        self.label.move(screen.width() // 2 - 100, 20)
+
 
         print("ScreenCapture initialized")
 
