@@ -255,11 +255,15 @@ class ScreenshotTool(QMainWindow):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.expanded_height = 500
-        self.collapsed_height = 5  # 设置为一个很小的高度
+        self.collapsed_height = 5
         self.setFixedWidth(200)
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
+
+        self.is_expanded = True
+        self.is_at_top = True
+        self.drag_position = None
 
         # 创建一个用于收缩状态的小部件
         self.collapsed_widget = QWidget(self)
@@ -270,16 +274,15 @@ class ScreenshotTool(QMainWindow):
         self.collapsed_widget.hide()
 
     def enterEvent(self, event):
-        if not self.is_expanded:
+        if not self.is_expanded and self.is_at_top:
             self.expand()
         self.collapse_timer.stop()
 
     def leaveEvent(self, event):
-        if self.is_expanded:
+        if self.is_expanded and self.is_at_top:
             cursor_pos = QCursor.pos()
             if not self.geometry().contains(cursor_pos):
                 self.collapse_timer.start(500)
-
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -287,10 +290,22 @@ class ScreenshotTool(QMainWindow):
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
-            self.move(event.globalPosition().toPoint() - self.drag_position)
+            new_pos = event.globalPosition().toPoint() - self.drag_position
+            self.move(new_pos)
+            self.check_top_edge()
 
     def mouseReleaseEvent(self, event):
-        self.snap_to_top()
+        self.check_top_edge()
+
+    def check_top_edge(self):
+        if self.y() <= 10:  # 允许一些误差
+            self.move(self.x(), 0)
+            self.is_at_top = True
+        else:
+            self.is_at_top = False
+            if not self.is_expanded:
+                self.expand()
+
 
     def snap_to_top(self):
         self.move(self.x(), 0)
@@ -328,14 +343,14 @@ class ScreenshotTool(QMainWindow):
     #         self.at_top_edge = False
     #         self.expand()
 
-    def check_top_edge(self):
-        print(self.at_top_edge )
-        print(self.y() )
-        print(self.screen.availableGeometry().top() )
-        self.at_top_edge = self.y() == self.screen.availableGeometry().top()
+    # def check_top_edge(self):
+    #     print(self.at_top_edge )
+    #     print(self.y() )
+    #     print(self.screen.availableGeometry().top() )
+    #     self.at_top_edge = self.y() == self.screen.availableGeometry().top()
 
     def collapse(self):
-        if self.is_expanded:
+        if self.is_expanded and self.is_at_top:
             self.animation.setStartValue(self.geometry())
             self.animation.setEndValue(QRect(self.x(), 0, self.width(), self.collapsed_height))
             self.animation.start()
@@ -347,7 +362,7 @@ class ScreenshotTool(QMainWindow):
     def expand(self):
         if not self.is_expanded:
             self.animation.setStartValue(self.geometry())
-            self.animation.setEndValue(QRect(self.x(), 0, self.width(), self.expanded_height))
+            self.animation.setEndValue(QRect(self.x(), self.y(), self.width(), self.expanded_height))
             self.animation.start()
             self.is_expanded = True
             self.central_widget.show()
