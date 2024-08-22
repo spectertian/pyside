@@ -1,39 +1,28 @@
 import sys
 import os
 import time
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
-                               QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
-                               QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
-                               QScrollArea, QMessageBox, QGridLayout, QToolTip,QStyle)
-from PySide6.QtGui import (QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication,
-                           QImage, QTransform, QCursor, QPainterPath, QRegion)
-from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
-                            QEasingCurve, Property, QEvent, QThread, QTimer, QThreadPool)
-
 import traceback
 
-from PySide6.QtWidgets import QApplication
-from PySide6.QtWidgets import QWidget, QRubberBand, QApplication, QLabel
-from PySide6.QtCore import Qt, QRect, QPoint, Signal, QTimer
-from PySide6.QtGui import QPixmap, QGuiApplication
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QPushButton,
+    QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
+    QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
+    QScrollArea, QMessageBox, QGridLayout, QToolTip, QStyle,
+    QProgressBar
+)
 
+from PySide6.QtGui import (
+    QPixmap, QScreen, QPainter, QColor, QIcon, QGuiApplication,
+    QImage, QTransform, QCursor, QPainterPath, QRegion,
+    QEventPoint
+)
 
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPushButton, QWidget,
-                               QHBoxLayout, QToolTip, QProgressBar)
-from PySide6.QtGui import QPixmap, QIcon, QPainter, QColor,QEventPoint
-from PySide6.QtCore import Qt, QPoint, QSize, Signal, QTimer, QThread, Signal
+from PySide6.QtCore import (
+    Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation,
+    QEasingCurve, Property, QEvent, QThread, QTimer, QThreadPool,
+    QObject
+)
 
-
-from PySide6.QtCore import QObject, Qt, QRect, QPoint, Signal, QTimer, QSize
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
-                               QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
-                               QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
-                               QScrollArea, QMessageBox, QGridLayout, QToolTip)
-
-import sys
-import os
-import time
-import traceback
 def global_exception_handler(exctype, value, traceback):
     print("Unhandled exception:", exctype, value)
     print("Traceback:")
@@ -90,7 +79,6 @@ class ScreenshotItem(QWidget):
         self.image_label = QLabel()
         self.image_label.setPixmap(pixmap.scaled(140, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.image_label.setAlignment(Qt.AlignCenter)
-        # self.image_label.setStyleSheet("background-color: white; border: 1px solid #ddd;")
 
         # 删除按钮
         self.delete_button = QPushButton()
@@ -367,9 +355,6 @@ class ScreenshotTool(QMainWindow):
         QApplication.quit()
 
     def close(self):
-        """
-        重写关闭方法，清理资源并终止所有进程
-        """
         print("Closing ScreenshotTool...")
 
         # 停止所有可能正在运行的线程
@@ -1046,17 +1031,11 @@ if __name__ == "__main__":
 
 
         QTimer.singleShot(5000, show_main_window)
-        # app.lastWindowClosed.connect(app.quit)
-        # app.lastWindowClosed.connect(app.quit)
+
 
         # 使用 app.quit() 来确保应用程序正确退出
         app.aboutToQuit.connect(app.deleteLater)
         sys.exit(app.exec())
-        # exit_code = app.exec()        # 确保所有窗口都被关闭
-        # app.closeAllWindows()
-        #
-        # # 退出程序
-        # sys.exit(exit_code)
 
     except Exception as e:
         print(f"An error occurred: {e}")
