@@ -13,7 +13,9 @@ from PySide6.QtCore import (Qt, QRect, QPoint, Signal, QSize, QPropertyAnimation
 import traceback
 
 from PySide6.QtWidgets import QApplication
-
+from PySide6.QtWidgets import QWidget, QRubberBand, QApplication, QLabel
+from PySide6.QtCore import Qt, QRect, QPoint, Signal, QTimer
+from PySide6.QtGui import QPixmap, QGuiApplication
 def global_exception_handler(exctype, value, traceback):
     print("Unhandled exception:", exctype, value)
     print("Traceback:")
@@ -299,10 +301,10 @@ class ScreenshotTool(QMainWindow):
         self.collapsed_widget.mousePressEvent = self.handle_clicked
         self.collapsed_widget.hide()
 
+        self.screen_capture = None
+        self.is_capturing = False  # 新增标志
+
     def close(self):
-        """
-        重写关闭方法，可以在这里添加一些清理工作如果需要的话
-        """
         super().close()
     def enterEvent(self, event):
         if not self.is_expanded and self.is_at_top:
@@ -358,27 +360,6 @@ class ScreenshotTool(QMainWindow):
         x = max(screen_geometry.left(), min(pos.x(), screen_geometry.right() - self.width()))
         y = max(screen_geometry.top(), min(pos.y(), screen_geometry.bottom() - self.height()))
         return QPoint(x, y)
-
-    # def snap_to_edge(self):
-    #
-    #     print("xxx")
-    #
-    #
-    #     screen_geometry = self.screen.availableGeometry()
-    #     pos = self.pos()
-    #     if pos.y() < 10:
-    #         self.move(pos.x(), screen_geometry.top())
-    #         self.at_top_edge = True
-    #         self.collapse()
-    #     else:
-    #         self.at_top_edge = False
-    #         self.expand()
-
-    # def check_top_edge(self):
-    #     print(self.at_top_edge )
-    #     print(self.y() )
-    #     print(self.screen.availableGeometry().top() )
-    #     self.at_top_edge = self.y() == self.screen.availableGeometry().top()
 
     def collapse(self):
         if self.is_expanded and self.is_at_top:
@@ -451,22 +432,23 @@ class ScreenshotTool(QMainWindow):
         """)
 
         return button
+
     def start_capture(self):
+        print("Starting capture")
+        self.is_capturing = True  # 设置标志
         self.hide()
+        print("Main window hidden")
         self.screen_capture = ScreenCapture()
         self.screen_capture.screenshot_taken.connect(self.handle_screenshot)
+        print("About to show screen capture")
         self.screen_capture.show()
+        print("Screen capture shown")
 
-    # def handle_screenshot(self, pixmap, rect):
-    #     self.show()
-    #     if pixmap:
-    #         save_dialog = SaveDialog(pixmap, rect, self)
-    #         if save_dialog.exec() == QDialog.Accepted:
-    #             filename = f"screenshot_{len(os.listdir('screenshots')) + 1}.png"
-    #             pixmap.save(os.path.join("screenshots", filename))
-    #             self.load_saved_screenshots()
+        # 添加一个短暂的延迟
+        QTimer.singleShot(100, self.screen_capture.activateWindow)
 
     def handle_screenshot(self, pixmap, rect):
+        print("Handling screenshot")
         try:
             if pixmap:
                 save_dialog = SaveDialog(pixmap, rect, self)
@@ -479,12 +461,14 @@ class ScreenshotTool(QMainWindow):
                     self.load_saved_screenshots()
                 else:
                     print("Screenshot cancelled")
-            self.show()  # Always show the main window after the dialog is closed
         except Exception as e:
             print(f"Error in handle_screenshot: {e}")
             traceback.print_exc()
         finally:
-            self.show()  # Ensure the main window is shown regardless of what happened
+            print("Screenshot handling complete")
+            self.show()  # 确保主窗口总是被显示
+            print("Showing main window")
+            # self.is_capturing = False  # 重置标志
 
     def load_saved_screenshots(self):
         self.screenshot_list.clear()
@@ -534,43 +518,49 @@ class ScreenshotTool(QMainWindow):
             self.load_saved_screenshots()
             self.image_label.clear()
 
-    # def delete_screenshot(self, file_path):
-    #     reply = QMessageBox.question(self, '删除图片',
-    #                                  '是否要删除图片?',
-    #                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-    #     if reply == QMessageBox.Yes:
-    #         os.remove(file_path)
-    #         self.load_saved_screenshots()
-    #
-    # def delete_all_screenshots(self):
-    #     reply = QMessageBox.question(self, '删除全部图片',
-    #                                  '是否要删除全部图片?',
-    #                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-    #     if reply == QMessageBox.Yes:
-    #         screenshot_dir = "screenshots"
-    #         for filename in os.listdir(screenshot_dir):
-    #             file_path = os.path.join(screenshot_dir, filename)
-    #             try:
-    #                 if os.path.isfile(file_path):
-    #                     os.remove(file_path)
-    #             except Exception as e:
-    #                 print(f"Error deleting {file_path}: {e}")
-    #         self.load_saved_screenshots()
+
+    def closeEvent(self, event):
+        print("Close event triggered")
+        if self.is_capturing:
+            event.ignore()  # 如果正在截图，忽略关闭事件
+            print("Close event ignored due to ongoing capture")
+            self.is_capturing= False
+        else:
+            event.accept()  # 否则接受关闭事件
+            print("Close event accepted")
+
+    def show_window(self):
+        print("Showing main window")
+        self.show()
+        self.activateWindow()  # 确保窗口被激活
+from PySide6.QtCore import Signal, QRect, QPoint
 
 class ScreenCapture(QWidget):
     screenshot_taken = Signal(QPixmap, QRect)
+    finished = Signal()  # 添加这行
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent, Qt.Window)
+        print("Initializing ScreenCapture")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setStyleSheet("background-color:black")
-        self.setWindowOpacity(0.3)
+        self.setStyleSheet("background-color: rgba(0, 0, 0, 100);")  # 半透明黑色
         screen = QApplication.primaryScreen().geometry()
         self.setGeometry(screen)
         self.begin = QPoint()
         self.end = QPoint()
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
+        # 添加一个标签，以确保有可见内容
+        self.label = QLabel("Click and drag to capture", self)
+        self.label.setStyleSheet("color: white; font-size: 24px; background-color: rgba(0, 0, 0, 150);")
+        self.label.move(screen.width() // 2 - 100, 20)
+
+        print("ScreenCapture initialized")
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            print("Escape key pressed, closing ScreenCapture")
+            self.close()
     def mousePressEvent(self, event):
         self.begin = event.position().toPoint()
         self.end = self.begin
@@ -588,8 +578,8 @@ class ScreenCapture(QWidget):
             screen = QApplication.primaryScreen()
             pixmap = screen.grabWindow(0, rect.x(), rect.y(), rect.width(), rect.height())
             self.screenshot_taken.emit(pixmap, rect)
+        self.finished.emit()  # 发射 finished 信号
         self.close()
-
 
 class SaveDialog(QDialog):
     def __init__(self, pixmap, rect, parent=None):
@@ -934,26 +924,49 @@ class OverlayWidget(QWidget):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))  # 几乎完全透明的背景
 
+from PySide6.QtCore import QObject, Qt, QRect, QPoint, Signal, QTimer, QSize
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
+                               QVBoxLayout, QHBoxLayout, QListWidget, QLabel,
+                               QRubberBand, QDialog, QDialogButtonBox, QListWidgetItem,
+                               QScrollArea, QMessageBox, QGridLayout, QToolTip)
+
+import sys
+import os
+import time
+import traceback
+class GlobalEventFilter(QObject):
+    def eventFilter(self, obj, event):
+        try:
+            return False  # 不处理事件，让它继续传播
+        except Exception as e:
+            print(f"Exception in event filter: {e}")
+            traceback.print_exc()
+            return False
 
 if __name__ == "__main__":
-    sys.excepthook = global_exception_handler
+    try:
+        sys.excepthook = global_exception_handler
+        app = QApplication(sys.argv)
 
-    app = QApplication(sys.argv)
+        global_event_filter = GlobalEventFilter()
+        app.installEventFilter(global_event_filter)
+        splash = SplashScreen()
+        splash.show()
 
-    # 显示启动画面
-    splash = SplashScreen()
-    splash.show()
-
-    # 创建主窗口，但不要立即显示
-    tool = ScreenshotTool()
-
-
-    # 使用 QTimer 来控制启动画面的显示时间
-    def show_main_window():
-        splash.close()
-        tool.show()
+        global tool
+        tool = ScreenshotTool()
 
 
-    QTimer.singleShot(500, show_main_window)  # 5000 毫秒 = 5 秒
+        def show_main_window():
+            splash.close()
+            tool.show()
 
-    sys.exit(app.exec())
+
+        QTimer.singleShot(500, show_main_window)
+
+        sys.exit(app.exec())
+
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        traceback.print_exc()
