@@ -228,6 +228,104 @@ class ScreenshotTool(QMainWindow):
 
         self.load_saved_screenshots()
 
+        self.expanded_height = 500
+        self.collapsed_height = 10
+        self.setFixedWidth(200)
+
+        self.is_expanded = True
+        self.is_dragging = False
+        self.drag_position = None
+
+        self.animation = QPropertyAnimation(self, b"geometry")
+        self.animation.setDuration(300)
+        self.animation.setEasingCurve(QEasingCurve.InOutQuad)
+
+        self.expand_timer = QTimer(self)
+        self.expand_timer.setSingleShot(True)
+        self.expand_timer.timeout.connect(self.expand)
+
+        self.collapse_timer = QTimer(self)
+        self.collapse_timer.setSingleShot(True)
+        self.collapse_timer.timeout.connect(self.collapse)
+        self.screen = QGuiApplication.primaryScreen()
+
+    def mouseMoveEvent(self, event):
+        if self.is_dragging:
+            new_pos = event.globalPosition().toPoint() - self.drag_position
+            self.move(self.constrainToScreen(new_pos))
+            event.accept()
+
+    def constrainToScreen(self, pos):
+        screen_geometry = self.screen.availableGeometry()
+        x = max(screen_geometry.left(), min(pos.x(), screen_geometry.right() - self.width()))
+        y = max(screen_geometry.top(), min(pos.y(), screen_geometry.bottom() - self.height()))
+        return QPoint(x, y)
+
+    def snap_to_edge(self):
+        screen_geometry = self.screen.availableGeometry()
+        pos = self.pos()
+        if pos.y() < 10:
+            self.move(pos.x(), screen_geometry.top())
+        elif pos.y() > screen_geometry.bottom() - 10:
+            self.move(pos.x(), screen_geometry.bottom() - self.collapsed_height)
+
+    def enterEvent(self, event):
+        self.expand_timer.start(200)
+        self.collapse_timer.stop()
+
+    def leaveEvent(self, event):
+        self.collapse_timer.start(500)
+        self.expand_timer.stop()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.is_dragging = True
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if self.is_dragging:
+            self.move(event.globalPosition().toPoint() - self.drag_position)
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        self.is_dragging = False
+        self.snap_to_edge()
+
+    def snap_to_edge(self):
+        screen = QGuiApplication.primaryScreen().geometry()
+        pos = self.pos()
+        if pos.y() < 10:
+            self.move(pos.x(), 0)
+        elif pos.y() > screen.height() - 10:
+            self.move(pos.x(), screen.height() - self.collapsed_height)
+
+    def expand(self):
+        if not self.is_expanded:
+            self.animation.setStartValue(self.geometry())
+            self.animation.setEndValue(QRect(self.x(), self.y(), self.width(), self.expanded_height))
+            self.animation.start()
+            self.is_expanded = True
+            self.central_widget.show()
+
+    def collapse(self):
+        if self.is_expanded:
+            self.animation.setStartValue(self.geometry())
+            self.animation.setEndValue(QRect(self.x(), self.y(), self.width(), self.collapsed_height))
+            self.animation.start()
+            self.is_expanded = False
+            self.central_widget.hide()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.central_widget.setFixedSize(self.size())
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.expand()
+        # 确保窗口首次显示时位于屏幕内
+        self.move(self.constrainToScreen(self.pos()))
+
     def create_tab_button(self, text, icon_path):
         button = QPushButton()
         button_layout = QHBoxLayout(button)
