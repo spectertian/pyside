@@ -112,12 +112,37 @@ class ScreenshotTool(QMainWindow):
         icon_container = QWidget()
         icon_layout = QHBoxLayout(icon_container)
         icon_layout.setContentsMargins(0, 0, 0, 0)
-        icon_layout.setAlignment(Qt.AlignLeft)
+        icon_layout.setSpacing(0)
+
+        # Logo
         icon_label = QLabel()
         icon_pixmap = QPixmap("icons/logo_small.png")
         icon_label.setPixmap(icon_pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         icon_layout.addWidget(icon_label)
-        icon_layout.addStretch(1)
+
+        icon_layout.addStretch(1)  # 添加伸缩项，使logo靠左，关闭按钮靠右
+
+        # Close button
+        self.close_button = QPushButton()
+        close_icon = QIcon("icons/close_icon.png")  # 请确保您有一个合适的关闭图标
+        self.close_button.setIcon(close_icon)
+        self.close_button.setIconSize(QSize(24, 24))
+        self.close_button.setStyleSheet("""
+                    QPushButton {
+                        background-color: transparent;
+                        border: none;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(255, 255, 255, 0.2);
+                    }
+                    QPushButton:pressed {
+                        background-color: rgba(255, 255, 255, 0.1);
+                    }
+                """)
+        self.close_button.setFixedSize(48, 48)  # 设置固定大小，与logo大小一致
+        self.close_button.clicked.connect(self.close)  # 连接到关闭功能
+        icon_layout.addWidget(self.close_button)
+
         top_layout.addWidget(icon_container)
 
         # Buttons container
@@ -265,6 +290,11 @@ class ScreenshotTool(QMainWindow):
         self.collapsed_widget.mousePressEvent = self.handle_clicked
         self.collapsed_widget.hide()
 
+    def close(self):
+        """
+        重写关闭方法，可以在这里添加一些清理工作如果需要的话
+        """
+        super().close()
     def enterEvent(self, event):
         if not self.is_expanded and self.is_at_top:
             self.expand()
@@ -478,6 +508,28 @@ class ScreenshotTool(QMainWindow):
             self.load_saved_screenshots()
             self.image_label.clear()
 
+    # def delete_screenshot(self, file_path):
+    #     reply = QMessageBox.question(self, '删除图片',
+    #                                  '是否要删除图片?',
+    #                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+    #     if reply == QMessageBox.Yes:
+    #         os.remove(file_path)
+    #         self.load_saved_screenshots()
+    #
+    # def delete_all_screenshots(self):
+    #     reply = QMessageBox.question(self, '删除全部图片',
+    #                                  '是否要删除全部图片?',
+    #                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+    #     if reply == QMessageBox.Yes:
+    #         screenshot_dir = "screenshots"
+    #         for filename in os.listdir(screenshot_dir):
+    #             file_path = os.path.join(screenshot_dir, filename)
+    #             try:
+    #                 if os.path.isfile(file_path):
+    #                     os.remove(file_path)
+    #             except Exception as e:
+    #                 print(f"Error deleting {file_path}: {e}")
+    #         self.load_saved_screenshots()
 
 class ScreenCapture(QWidget):
     screenshot_taken = Signal(QPixmap, QRect)
