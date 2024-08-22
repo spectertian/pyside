@@ -334,45 +334,33 @@ class ScreenshotTool(QMainWindow):
         QApplication.quit()
 
     def close(self):
-        print("Closing ScreenshotTool...")
 
         if hasattr(self, 'info_thread') and self.info_thread.isRunning():
-            print("Stopping info thread...")
             self.info_thread.quit()
             self.info_thread.wait()
 
         for child in self.findChildren(QDialog):
-            print(f"Closing dialog: {child}")
             child.close()
 
         if hasattr(self, 'animation'):
-            print("Stopping animation...")
             self.animation.stop()
 
         if hasattr(self, 'screen_capture') and self.screen_capture is not None:
-            print("Deleting screen capture...")
             self.screen_capture.deleteLater()
         else:
             print("No screen capture to delete.")
 
-        print("Saving settings...")
 
-        # 关闭主窗口
-        print("Closing main window...")
         super().close()
 
         if QApplication.instance().topLevelWindows() == 0:
-            print("No more windows, quitting application...")
             QApplication.instance().quit()
     def closeEvent(self, event):
-        print("Close event triggered")
         if self.is_capturing:
             event.ignore()
-            print("Close event ignored due to ongoing capture")
             self.is_capturing= False
         else:
             event.accept()
-            print("Close event accepted")
             self.thread_pool.clear()
             self.thread_pool.waitForDone()
 
@@ -509,22 +497,17 @@ class ScreenshotTool(QMainWindow):
         return button
 
     def start_capture(self):
-        print("Starting capture")
         self.is_capturing = True
         self.hide()
-        print("Main window hidden")
 
         if self.screen_capture is not None:
             self.screen_capture.deleteLater()
 
         self.screen_capture = ScreenCapture()
         self.screen_capture.screenshot_taken.connect(self.handle_screenshot)
-        print("About to show screen capture")
         self.screen_capture.show()
-        print("Screen capture shown")
 
     def handle_screenshot(self, pixmap, rect):
-        print("Handling screenshot")
         try:
             if pixmap:
                 save_dialog = SaveDialog(pixmap, rect, self)
@@ -538,7 +521,6 @@ class ScreenshotTool(QMainWindow):
                 else:
                     print("Screenshot cancelled")
         except Exception as e:
-            print(f"Error in handle_screenshot: {e}")
             traceback.print_exc()
         finally:
             self.show()
@@ -574,7 +556,6 @@ class ScreenshotTool(QMainWindow):
         if reply == QMessageBox.Yes:
             try:
                 os.remove(file_path)
-                print(f"File {file_path} has been deleted.")
             except Exception as e:
                 print(f"Error deleting file {file_path}: {e}")
             finally:
@@ -601,7 +582,6 @@ class ScreenCapture(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Window)
-        print("Initializing ScreenCapture")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setStyleSheet("background-color:black")
         self.setWindowOpacity(0.3)
@@ -610,10 +590,6 @@ class ScreenCapture(QWidget):
         self.begin = QPoint()
         self.end = QPoint()
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
-
-
-
-        print("ScreenCapture initialized")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
