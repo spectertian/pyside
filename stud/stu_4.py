@@ -6,10 +6,10 @@ from tqdm import tqdm
 sentiment_analyzer = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
 
 # 读取Excel文件
-df = pd.read_excel("your_excel_file.xlsx")
+df = pd.read_excel("用户调查结果列表.xlsx")
 
 # 假设留言列名为'comment'
-comments = df['comment'].tolist()
+comments = df['用户反馈'].tolist()
 
 results = []
 
