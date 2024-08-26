@@ -6,73 +6,72 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 import torch
 import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
-# 忽略特定的警告
-warnings.filterwarnings("ignore", category=FutureWarning, message="clean_up_tokenization_spaces")
-
-# 下载必要的NLTK数据
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 
-# 检查是否有可用的GPU
 device = 0 if torch.cuda.is_available() else -1
 
-# 加载多语言情感分析模型
 sentiment_analyzer = pipeline("sentiment-analysis",
                               model="nlptown/bert-base-multilingual-uncased-sentiment",
                               device=device)
 
-# 读取Excel文件
 try:
     df = pd.read_excel('用户调查结果列表.xlsx')
 except FileNotFoundError:
     print("无法找到指定的Excel文件。请确保文件路径正确。")
     sys.exit(1)
 
-
-# 清理评论数据
 def clean_comments(comments):
     cleaned = []
     for comment in comments:
-        if isinstance(comment, str):
-            cleaned.append(comment)
-        elif pd.isna(comment):
-            continue
+        if isinstance(comment, str) and comment.strip():
+            cleaned.append(comment.strip())
         else:
-            cleaned.append(str(comment))
+            cleaned.append("")  # 用空字符串替代无效评论
     return cleaned
 
+original_comments = df['用户反馈'].tolist()
+cleaned_comments = clean_comments(original_comments)
 
-cleaned_comments = clean_comments(df['用户反馈'].tolist())
-
-print(f"原始评论数量: {len(df['用户反馈'])}")
+print(f"原始评论数量: {len(original_comments)}")
 print(f"清理后的评论数量: {len(cleaned_comments)}")
 
-# 进行情感分析
 batch_size = 32
 sentiments = []
 for i in range(0, len(cleaned_comments), batch_size):
-    batch = cleaned_comments[i:i + batch_size]
-    try:
-        results = sentiment_analyzer(batch)
-        sentiments.extend(results)
-    except Exception as e:
-        print(f"处理批次 {i} 到 {i + batch_size} 时出错: {e}")
-        continue
+    batch = cleaned_comments[i:i+batch_size]
+    batch = [comment for comment in batch if comment]  # 只分析非空评论
+    if batch:
+        try:
+            results = sentiment_analyzer(batch)
+            sentiments.extend(results)
+        except Exception as e:
+            print(f"处理批次 {i} 到 {i+batch_size} 时出错: {e}")
+            sentiments.extend([{'label': '3 stars', 'score': 0.0}] * len(batch))  # 用中性结果填充
+    else:
+        sentiments.extend([{'label': '3 stars', 'score': 0.0}] * len(batch))
+
+# 确保 sentiments 和 cleaned_comments 长度相同
+if len(sentiments) < len(cleaned_comments):
+    sentiments.extend([{'label': '3 stars', 'score': 0.0}] * (len(cleaned_comments) - len(sentiments)))
 
 # 将评论分类
 positive_comments = []
 neutral_comments = []
 negative_comments = []
 
+
 for comment, result in zip(cleaned_comments, sentiments):
-    score = int(result['label'].split()[0])
-    if score >= 4:
-        positive_comments.append(comment)
-    elif score <= 2:
-        negative_comments.append(comment)
-    else:
-        neutral_comments.append(comment)
+    if comment:  # 只处理非空评论
+        score = int(result['label'].split()[0])
+        if score >= 4:
+            positive_comments.append(comment)
+        elif score <= 2:
+            negative_comments.append(comment)
+        else:
+            neutral_comments.append(comment)
 
 
 def summarize_text(text_list, num_sentences=3):
@@ -125,15 +124,15 @@ print(f"\n积极评论数量: {len(positive_comments)}")
 print(f"中性评论数量: {len(neutral_comments)}")
 print(f"消极评论数量: {len(negative_comments)}")
 
-# 保存结果到Excel文件
-result_df = pd.DataFrame({
-    '积极评论': positive_comments,
-    '中性评论': neutral_comments,
-    '消极评论': negative_comments
-})
-
-try:
-    result_df.to_excel('情感分析结果.xlsx', index=False)
-    print("\n结果已保存到 '情感分析结果.xlsx'")
-except Exception as e:
-    print(f"保存结果时出错: {e}")
+# # 保存结果到Excel文件
+# result_df = pd.DataFrame({
+#     '积极评论': positive_comments,
+#     '中性评论': neutral_comments,
+#     '消极评论': negative_comments
+# })
+#
+# try:
+#     result_df.to_excel('情感分析结果.xlsx', index=False)
+#     print("\n结果已保存到 '情感分析结果.xlsx'")
+# except Exception as e:
+#     print(f"保存结果时出错: {e}")
